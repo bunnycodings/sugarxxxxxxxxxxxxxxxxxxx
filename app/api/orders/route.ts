@@ -1,0 +1,76 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createOrder } from '@/lib/orders'
+import pool, { executeWithRetry } from '@/lib/db'
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const { items, total, customer } = body
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ error: 'Items are required' }, { status: 400 })
+    }
+
+    if (!total || total <= 0) {
+      return NextResponse.json({ error: 'Valid total is required' }, { status: 400 })
+    }
+
+    if (!customer || !customer.name || !customer.email) {
+      return NextResponse.json({ error: 'Customer information is required' }, { status: 400 })
+    }
+
+    // Check stock availability for all items before creating order
+    for (const item of items) {
+      try {
+        const result = await executeWithRetry(async () =>
+          pool.execute('SELECT stock FROM products WHERE id = ?', [item.id])
+        ) as any[]
+        const [rows] = result
+        
+        if (rows.length === 0) {
+          return NextResponse.json({ 
+            error: `Product "${item.name}" not found` 
+          }, { status: 400 })
+        }
+        
+        const productStock = rows[0].stock || 0
+        if (productStock <= 0) {
+          return NextResponse.json({ 
+            error: `"${item.name}" is out of stock and cannot be purchased` 
+          }, { status: 400 })
+        }
+        
+        if (item.quantity > productStock) {
+          return NextResponse.json({ 
+            error: `Insufficient stock for "${item.name}". Only ${productStock} available, but ${item.quantity} requested.` 
+          }, { status: 400 })
+        }
+      } catch (error: any) {
+        console.error('Stock check error:', error)
+        return NextResponse.json({ 
+          error: `Failed to check stock for "${item.name}"` 
+        }, { status: 500 })
+      }
+    }
+
+    const order = await createOrder({
+      customer_name: customer.name,
+      customer_email: customer.email,
+      customer_phone: customer.phone || null,
+      total: parseFloat(total),
+      status: 'pending',
+      items: items
+    })
+
+    return NextResponse.json({ 
+      success: true,
+      orderId: order.id 
+    }, { status: 201 })
+  } catch (error: any) {
+    console.error('Create order error:', error)
+    return NextResponse.json({ 
+      error: error.message || 'Failed to create order' 
+    }, { status: 500 })
+  }
+}
+

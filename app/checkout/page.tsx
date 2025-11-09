@@ -1,0 +1,301 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useCart } from '@/contexts/CartContext'
+
+export default function Checkout() {
+  const router = useRouter()
+  const { items, getTotal, clearCart } = useCart()
+  const [customerInfo, setCustomerInfo] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    countryCode: '+66' // Default to Thailand
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+
+  useEffect(() => {
+    checkAuth()
+  }, [])
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/verify')
+      const data = await response.json()
+      
+      if (!data.authenticated) {
+        router.push('/login?redirect=/checkout')
+        return
+      }
+      
+      // Auto-fill email if user is logged in
+      if (data.user?.email) {
+        setCustomerInfo(prev => ({
+          ...prev,
+          email: data.user.email
+        }))
+      }
+    } catch (error) {
+      router.push('/login?redirect=/checkout')
+      return
+    } finally {
+      setIsCheckingAuth(false)
+    }
+  }
+
+  const total = getTotal()
+
+  if (isCheckingAuth) {
+    return (
+      <div className="py-12 bg-gradient-to-br from-pink-50 via-white to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 min-h-screen">
+        <div className="container mx-auto px-4 text-center">
+          <div className="text-gray-500 dark:text-gray-400">Loading...</div>
+        </div>
+      </div>
+    )
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+
+    if (!customerInfo.name || !customerInfo.email) {
+      setError('Please fill in all required fields')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      // Create order
+      const fullPhoneNumber = customerInfo.phone ? `${customerInfo.countryCode}${customerInfo.phone.replace(/^0+/, '')}` : ''
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items,
+          total,
+          customer: {
+            ...customerInfo,
+            phone: fullPhoneNumber
+          }
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        const errorMessage = data.error || 'Failed to create order'
+        setError(errorMessage)
+        setLoading(false)
+        
+        // If stock issue, refresh page to update cart
+        if (errorMessage.includes('out of stock') || errorMessage.includes('Insufficient stock')) {
+          setTimeout(() => {
+            window.location.reload()
+          }, 2000)
+        }
+        return
+      }
+
+      // Clear cart and redirect to payment page
+      clearCart()
+      router.push(`/payment/${data.orderId}`)
+    } catch (err) {
+      setError('An error occurred. Please try again.')
+      setLoading(false)
+    }
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="py-12 bg-gradient-to-br from-pink-50 via-white to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 min-h-screen">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto text-center">
+            <h1 className="text-4xl font-bold mb-4 text-gray-900 dark:text-gray-100">
+              Your cart is empty
+            </h1>
+            <Link
+              href="/cart"
+              className="inline-block px-6 py-3 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-semibold"
+            >
+              Back to Cart
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="py-12 bg-gradient-to-br from-pink-50 via-white to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 min-h-screen">
+      <div className="container mx-auto px-4">
+        <h1 className="text-4xl md:text-5xl font-display font-bold mb-2 bg-gradient-to-r from-pink-600 to-blue-600 dark:from-pink-400 dark:to-blue-400 bg-clip-text text-transparent">
+          Checkout
+        </h1>
+        <p className="text-gray-600 dark:text-gray-300 mb-8">
+          Enter your information to complete your order
+        </p>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {/* Checkout Form */}
+          <div className="md:col-span-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+                Customer Information
+              </h2>
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    required
+                    value={customerInfo.name}
+                    onChange={(e) => setCustomerInfo({ ...customerInfo, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    required
+                    value={customerInfo.email}
+                    onChange={(e) => setCustomerInfo({ ...customerInfo, email: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="your.email@example.com"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Phone Number (with Country Code)
+                  </label>
+                  <div className="flex gap-2">
+                    <select
+                      id="countryCode"
+                      value={customerInfo.countryCode}
+                      onChange={(e) => setCustomerInfo({ ...customerInfo, countryCode: e.target.value })}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="+1">+1 (US/Canada)</option>
+                      <option value="+44">+44 (UK)</option>
+                      <option value="+66">+66 (Thailand)</option>
+                      <option value="+65">+65 (Singapore)</option>
+                      <option value="+60">+60 (Malaysia)</option>
+                      <option value="+62">+62 (Indonesia)</option>
+                      <option value="+63">+63 (Philippines)</option>
+                      <option value="+84">+84 (Vietnam)</option>
+                      <option value="+86">+86 (China)</option>
+                      <option value="+81">+81 (Japan)</option>
+                      <option value="+82">+82 (South Korea)</option>
+                      <option value="+61">+61 (Australia)</option>
+                      <option value="+64">+64 (New Zealand)</option>
+                      <option value="+91">+91 (India)</option>
+                      <option value="+971">+971 (UAE)</option>
+                      <option value="+973">+973 (Bahrain)</option>
+                      <option value="+974">+974 (Qatar)</option>
+                      <option value="+965">+965 (Kuwait)</option>
+                      <option value="+966">+966 (Saudi Arabia)</option>
+                      <option value="+972">+972 (Israel)</option>
+                      <option value="+27">+27 (South Africa)</option>
+                      <option value="+49">+49 (Germany)</option>
+                      <option value="+33">+33 (France)</option>
+                      <option value="+39">+39 (Italy)</option>
+                      <option value="+34">+34 (Spain)</option>
+                      <option value="+31">+31 (Netherlands)</option>
+                      <option value="+32">+32 (Belgium)</option>
+                      <option value="+41">+41 (Switzerland)</option>
+                      <option value="+46">+46 (Sweden)</option>
+                      <option value="+47">+47 (Norway)</option>
+                      <option value="+45">+45 (Denmark)</option>
+                      <option value="+358">+358 (Finland)</option>
+                      <option value="+351">+351 (Portugal)</option>
+                      <option value="+353">+353 (Ireland)</option>
+                      <option value="+48">+48 (Poland)</option>
+                      <option value="+420">+420 (Czech Republic)</option>
+                      <option value="+36">+36 (Hungary)</option>
+                      <option value="+40">+40 (Romania)</option>
+                      <option value="+7">+7 (Russia/Kazakhstan)</option>
+                      <option value="+90">+90 (Turkey)</option>
+                      <option value="+20">+20 (Egypt)</option>
+                      <option value="+52">+52 (Mexico)</option>
+                      <option value="+55">+55 (Brazil)</option>
+                      <option value="+54">+54 (Argentina)</option>
+                      <option value="+56">+56 (Chile)</option>
+                      <option value="+57">+57 (Colombia)</option>
+                      <option value="+51">+51 (Peru)</option>
+                    </select>
+                    <input
+                      type="tel"
+                      id="phone"
+                      value={customerInfo.phone}
+                      onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
+                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="987654321"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Format: {customerInfo.countryCode === '+66' ? '9XX-XXX-XXXX' : 'Enter phone number without leading 0'}
+                  </p>
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-semibold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Processing...' : 'Proceed to Payment'}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Order Summary */}
+          <div className="md:col-span-1">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 sticky top-4">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+                Order Summary
+              </h2>
+              <div className="space-y-3 mb-6">
+                {items.map((item) => (
+                  <div key={item.id} className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      {item.name} × {item.quantity}
+                    </span>
+                    <span className="text-gray-900 dark:text-gray-100 font-medium">
+                      ฿{(Number(item.price) * item.quantity || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-gray-100">
+                  <span>Total</span>
+                  <span>฿{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
