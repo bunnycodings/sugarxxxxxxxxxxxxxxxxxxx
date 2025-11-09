@@ -39,14 +39,15 @@ const poolInstance = getPool()
 // Note: mysql2/promise pool doesn't support event handlers like 'error'
 // Errors are handled at the query/connection level via try/catch blocks
 
-// Test connection on startup
-poolInstance.getConnection()
-  .then((connection) => {
-    console.log('✅ Database connection successful')
-    connection.release()
-  })
-  .catch((error) => {
-    console.error('❌ Database connection failed:', error.message)
+// Test connection on startup (skip during build)
+if (process.env.NEXT_PHASE !== 'phase-production-build') {
+  poolInstance.getConnection()
+    .then((connection) => {
+      console.log('✅ Database connection successful')
+      connection.release()
+    })
+    .catch((error) => {
+      console.error('❌ Database connection failed:', error.message)
     console.error('')
     if (error.code === 'ER_ACCESS_DENIED_ERROR' || error.errno === 1045) {
       // Extract IP from error message if available
@@ -180,6 +181,7 @@ poolInstance.getConnection()
       console.error('   - Database exists (or create it through your hosting control panel)')
     }
   })
+}
 
 // Initialize database tables automatically
 export async function initializeDatabase() {
@@ -444,11 +446,16 @@ export async function initializeDatabase() {
   }
 }
 
-// Auto-initialize database on startup (only in server environment)
-if (typeof window === 'undefined') {
-  initializeDatabase().catch(() => {
-    // Silent fail - initialization errors are logged above
-  })
+// Auto-initialize database on startup (only in server environment, not during build)
+if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build') {
+  // Only initialize if we're not in build phase
+  // Check if we're actually running (not building)
+  if (process.env.NODE_ENV !== 'production' || process.env.VERCEL_ENV || process.env.RUNTIME_ENV) {
+    initializeDatabase().catch(() => {
+      // Silent fail - initialization errors are logged above
+      // This is expected during build time when DB is not available
+    })
+  }
 }
 
 // Helper function to execute queries with retry logic for connection errors
