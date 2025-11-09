@@ -120,10 +120,43 @@ export async function resetUserPassword(userId: number, newPassword: string) {
 export async function getUserById(userId: number) {
   try {
     const [rows] = await pool.execute(
-      'SELECT id, email, member_id, created_at FROM users WHERE id = ?',
+      'SELECT id, email, member_id, created_at, password FROM users WHERE id = ?',
       [userId]
     ) as any[]
     return rows[0] || null
+  } catch (error: any) {
+    if (error.code === 'ER_NO_SUCH_TABLE' || error.message?.includes("doesn't exist")) {
+      console.error('Database tables not found. Please run: npm run setup-db')
+      throw new Error('Database tables not initialized. Please run: npm run setup-db')
+    }
+    throw error
+  }
+}
+
+export async function getUserByMemberId(memberId: string) {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT id, email, member_id, created_at FROM users WHERE member_id = ?',
+      [memberId]
+    ) as any[]
+    return rows[0] || null
+  } catch (error: any) {
+    if (error.code === 'ER_NO_SUCH_TABLE' || error.message?.includes("doesn't exist")) {
+      console.error('Database tables not found. Please run: npm run setup-db')
+      throw new Error('Database tables not initialized. Please run: npm run setup-db')
+    }
+    throw error
+  }
+}
+
+export async function updateUserPassword(userId: number, newPassword: string) {
+  try {
+    const hashedPassword = await hashPassword(newPassword)
+    const [result] = await pool.execute(
+      'UPDATE users SET password = ? WHERE id = ?',
+      [hashedPassword, userId]
+    ) as any[]
+    return result.affectedRows > 0
   } catch (error: any) {
     if (error.code === 'ER_NO_SUCH_TABLE' || error.message?.includes("doesn't exist")) {
       console.error('Database tables not found. Please run: npm run setup-db')
