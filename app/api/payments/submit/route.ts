@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'All required fields must be provided' }, { status: 400 })
     }
 
-    let payment_proof_url = null
+    let payment_proof_url: string | undefined = undefined
 
     // Handle file upload if provided
     if (payment_proof && payment_proof.size > 0) {
