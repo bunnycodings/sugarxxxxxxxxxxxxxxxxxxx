@@ -3,6 +3,8 @@ import { getAdminByEmail, comparePassword } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
