@@ -6,13 +6,14 @@ const categoryCache = new Map<string, { products: any[], timestamp: number }>()
 const CACHE_TTL = 60000 // 60 seconds
 
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const category = searchParams.get('category')
+  const { searchParams } = new URL(request.url)
+  const category = searchParams.get('category')
 
-    if (!category) {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 })
-    }
+  if (!category) {
+    return NextResponse.json({ error: 'Category is required' }, { status: 400 })
+  }
+
+  try {
 
     // Check cache first
     const cached = categoryCache.get(category)
