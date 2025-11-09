@@ -38,15 +38,28 @@ export async function POST(request: NextRequest) {
       payment_proof_url = `/uploads/payments/${fileName}`
     }
 
-    const payment = await createPayment({
+    const paymentData: {
+      order_id: number
+      mtcn_no: string
+      sender_name: string
+      transaction_date: string
+      amount: number
+      payment_proof_url?: string
+      status: string
+    } = {
       order_id: orderId,
       mtcn_no,
       sender_name,
       transaction_date,
       amount,
-      payment_proof_url,
       status: 'pending'
-    })
+    }
+    
+    if (payment_proof_url) {
+      paymentData.payment_proof_url = payment_proof_url
+    }
+
+    const payment = await createPayment(paymentData)
 
     return NextResponse.json({ 
       success: true,
