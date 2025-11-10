@@ -10,9 +10,11 @@ export async function GET(request: NextRequest) {
     const sessionToken = cookieStore.get('admin_session')?.value
 
     if (!sessionToken) {
+      // Return 200 with authenticated: false to prevent console errors
+      // This is a status check, not an authentication failure
       return NextResponse.json(
         { authenticated: false },
-        { status: 401 }
+        { status: 200 }
       )
     }
 
@@ -25,9 +27,10 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     )
   } catch (error) {
+    // Return 200 with authenticated: false to prevent console errors
     return NextResponse.json(
       { authenticated: false },
-      { status: 401 }
+      { status: 200 }
     )
   }
 }

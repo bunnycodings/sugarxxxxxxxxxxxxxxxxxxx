@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useCart } from '@/contexts/CartContext'
 import { usePathname } from 'next/navigation'
@@ -15,27 +15,43 @@ export default function Navbar() {
   const { getItemCount } = useCart()
   const pathname = usePathname()
   const cartCount = getItemCount()
+  const adminCheckedRef = useRef(false)
+  const prevPathnameRef = useRef<string | null>(null)
 
   useEffect(() => {
+    let isMounted = true
+
     // Check if admin is logged in
     const checkAdminStatus = async () => {
       try {
-        const response = await fetch('/api/admin/verify')
+        const response = await fetch('/api/admin/verify', {
+          credentials: 'include'
+        })
+        if (!isMounted) return
+        
         if (response.ok) {
           const data = await response.json()
           setIsAdmin(data.authenticated === true)
+          adminCheckedRef.current = true
         } else {
           setIsAdmin(false)
+          adminCheckedRef.current = true
         }
       } catch (error) {
+        if (!isMounted) return
         setIsAdmin(false)
+        adminCheckedRef.current = true
       }
     }
 
     // Check if user is logged in
     const checkUserStatus = async () => {
       try {
-        const response = await fetch('/api/auth/verify')
+        const response = await fetch('/api/auth/verify', {
+          credentials: 'include'
+        })
+        if (!isMounted) return
+        
         if (response.ok) {
           const data = await response.json()
           setIsUser(data.authenticated === true)
@@ -45,28 +61,42 @@ export default function Navbar() {
           setUserEmail('')
         }
       } catch (error) {
+        if (!isMounted) return
         setIsUser(false)
         setUserEmail('')
       }
     }
 
-    checkAdminStatus()
-    checkUserStatus()
+    // Check admin status only:
+    // 1. On initial mount (first time)
+    // 2. When navigating to/from admin routes
+    const isAdminRoute = pathname?.startsWith('/admin')
+    const wasAdminRoute = prevPathnameRef.current?.startsWith('/admin')
+    const shouldCheckAdmin = !adminCheckedRef.current || isAdminRoute || wasAdminRoute
 
-    // Recheck when pathname changes (after login/logout)
-    if (pathname) {
+    if (shouldCheckAdmin) {
       checkAdminStatus()
-      checkUserStatus()
     }
 
-    // Check periodically to update status if user/admin logs out
-    const interval = setInterval(() => {
-      checkAdminStatus()
-      checkUserStatus()
-    }, 30000) // Check every 30 seconds
+    // Always check user status on mount and pathname changes
+    checkUserStatus()
 
-    return () => clearInterval(interval)
-  }, [pathname])
+    // Update refs
+    prevPathnameRef.current = pathname || null
+
+    // Only check user status periodically (admin check is expensive and not needed)
+    // This helps detect if user logged out in another tab
+    const interval = setInterval(() => {
+      if (isMounted) {
+        checkUserStatus()
+      }
+    }, 60000) // Check every 60 seconds
+
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [pathname]) // Re-run when pathname changes (e.g., after login/logout)
 
   const handleLogout = async () => {
     try {
