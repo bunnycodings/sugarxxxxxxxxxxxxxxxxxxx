@@ -94,19 +94,6 @@ export default function PaymentPage() {
     }
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      // Check if file is PDF
-      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-        setError('Please upload a PDF file only')
-        e.target.value = '' // Clear the input
-        return
-      }
-      setError('') // Clear any previous errors
-      setPaymentData({ ...paymentData, payment_proof: file })
-    }
-  }
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -231,11 +218,11 @@ export default function PaymentPage() {
               </p>
               <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                 <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">
-                  📦 How to get your files after payment is confirmed:
+                  📋 Next Steps:
                 </p>
                 <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-decimal list-inside">
                   <li>Open a ticket in our Discord server</li>
-                  <li>Send your Order #{orderId} and order details</li>
+                  <li>Submit your payment receipt (image or PDF) along with your Order #{orderId}</li>
                   <li>Our team will verify your payment and provide your files</li>
                 </ol>
               </div>
