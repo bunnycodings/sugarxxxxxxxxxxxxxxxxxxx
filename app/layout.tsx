@@ -7,7 +7,7 @@ import TopBar from '@/components/TopBar'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import BlackRibbon from '@/components/BlackRibbon'
-import { Analytics } from '@vercel/analytics/next'
+import { Analytics } from '@vercel/analytics/react'
 
 const comicNeue = Comic_Neue({ 
   subsets: ['latin'],
