@@ -118,9 +118,14 @@ export default function PaymentSuccess() {
               </p>
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                <strong>What's next?</strong> You will receive an email confirmation shortly. Your order is being processed and you will be notified once it's ready.
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">
+                📦 How to get your files:
               </p>
+              <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-decimal list-inside">
+                <li>Open a ticket in our Discord server</li>
+                <li>Send your Order #{orderId} and order details</li>
+                <li>Our team will verify your payment and provide your files</li>
+              </ol>
             </div>
             <Link
               href="/"

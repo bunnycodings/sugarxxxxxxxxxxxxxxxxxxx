@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import { readFile } from 'fs/promises'
+import { readFile, access } from 'fs/promises'
 import { join } from 'path'
+import { constants } from 'fs'
 import pool from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -81,9 +82,27 @@ export async function GET(
     }
 
     // Read and serve the file
-    const filePath = join(process.cwd(), 'public', product.file_url)
+    // Handle both relative paths (starting with /) and absolute paths
+    let filePath: string
+    if (product.file_url.startsWith('/')) {
+      // Remove leading slash and join with public directory
+      filePath = join(process.cwd(), 'public', product.file_url.substring(1))
+    } else {
+      filePath = join(process.cwd(), 'public', product.file_url)
+    }
     
     try {
+      // Check if file exists before trying to read it
+      try {
+        await access(filePath, constants.F_OK)
+      } catch (accessError) {
+        console.error('File access error:', accessError)
+        console.error('Attempted file path:', filePath)
+        return NextResponse.json({ 
+          error: 'File not found. The file may have been removed or is not available on the server. Please contact support if you believe this is an error.' 
+        }, { status: 404 })
+      }
+
       const fileBuffer = await readFile(filePath)
       const fileName = product.file_url.split('/').pop() || `product_${productId}.zip`
       
@@ -112,8 +131,9 @@ export async function GET(
       })
     } catch (fileError: any) {
       console.error('File read error:', fileError)
+      console.error('File path attempted:', filePath)
       return NextResponse.json({ 
-        error: 'File not found on server' 
+        error: 'File not found on server. Please contact support if you believe this is an error.' 
       }, { status: 404 })
     }
   } catch (error: any) {

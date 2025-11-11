@@ -51,7 +51,7 @@ interface Review {
   created_at: string
 }
 
-type Tab = 'users' | 'products' | 'redeem-codes' | 'reviews' | 'payments'
+type Tab = 'users' | 'products' | 'orders' | 'redeem-codes' | 'reviews' | 'payments'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -82,11 +82,6 @@ export default function AdminDashboard() {
     stock: '',
     is_active: true
   })
-  const [uploadingFile, setUploadingFile] = useState<number | null>(null)
-  const fileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({})
-  const [showFileUploadSection, setShowFileUploadSection] = useState(false)
-  const [selectedProductForUpload, setSelectedProductForUpload] = useState<string>('')
-  const [fileToUpload, setFileToUpload] = useState<File | null>(null)
   
   // Redeem Codes state
   const [redeemCodes, setRedeemCodes] = useState<RedeemCode[]>([])
@@ -104,6 +99,10 @@ export default function AdminDashboard() {
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
+  
+  // Orders state
+  const [orders, setOrders] = useState<any[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
   
   // Payment Settings state
   const [paymentSettings, setPaymentSettings] = useState({
@@ -123,6 +122,7 @@ export default function AdminDashboard() {
     checkAuth()
     if (activeTab === 'users') fetchUsers()
     if (activeTab === 'products') fetchProducts()
+    if (activeTab === 'orders') fetchOrders()
     if (activeTab === 'redeem-codes') fetchRedeemCodes()
     if (activeTab === 'reviews') fetchReviews()
     if (activeTab === 'payments') fetchPaymentSettings()
@@ -480,80 +480,24 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleFileUpload = async (productId: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setUploadingFile(productId)
-
+  // Orders functions
+  const fetchOrders = async () => {
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('productId', productId.toString())
-
-      const response = await fetch('/api/admin/products/upload-file', {
-        method: 'POST',
-        body: formData
-      })
-
+      setOrdersLoading(true)
+      const response = await fetch('/api/admin/orders')
       if (!response.ok) {
-        const data = await response.json()
-        alert(data.error || 'Failed to upload file')
+        if (response.status === 401) {
+          router.push('/admin/login')
+          return
+        }
         return
       }
-
-      // Refresh products list
-      fetchProducts()
-      alert('File uploaded successfully!')
+      const data = await response.json()
+      setOrders(data.orders || [])
     } catch (err) {
-      alert('An error occurred while uploading the file')
+      console.error('Error fetching orders:', err)
     } finally {
-      setUploadingFile(null)
-      // Reset file input
-      if (fileInputRefs.current[productId]) {
-        fileInputRefs.current[productId]!.value = ''
-      }
-    }
-  }
-
-  const handleFileUploadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!selectedProductForUpload || !fileToUpload) {
-      alert('Please select a product and file')
-      return
-    }
-
-    setUploadingFile(parseInt(selectedProductForUpload))
-
-    try {
-      const formData = new FormData()
-      formData.append('file', fileToUpload)
-      formData.append('productId', selectedProductForUpload)
-
-      const response = await fetch('/api/admin/products/upload-file', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        alert(data.error || 'Failed to upload file')
-        return
-      }
-
-      // Refresh products list
-      fetchProducts()
-      alert('File uploaded successfully!')
-      
-      // Reset form
-      setSelectedProductForUpload('')
-      setFileToUpload(null)
-      setShowFileUploadSection(false)
-    } catch (err) {
-      alert('An error occurred while uploading the file')
-    } finally {
-      setUploadingFile(null)
+      setOrdersLoading(false)
     }
   }
 
@@ -594,7 +538,7 @@ export default function AdminDashboard() {
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex space-x-1">
-            {(['users', 'products', 'redeem-codes', 'reviews', 'payments'] as Tab[]).map((tab) => (
+            {(['users', 'products', 'orders', 'redeem-codes', 'reviews', 'payments'] as Tab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -604,7 +548,7 @@ export default function AdminDashboard() {
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
                 }`}
               >
-                {tab === 'users' ? 'Users' : tab === 'products' ? 'Products' : tab === 'redeem-codes' ? 'Redeem Codes' : tab === 'reviews' ? 'Reviews' : 'Payment Settings'}
+                {tab === 'users' ? 'Users' : tab === 'products' ? 'Products' : tab === 'orders' ? 'Orders' : tab === 'redeem-codes' ? 'Redeem Codes' : tab === 'reviews' ? 'Reviews' : 'Payment Settings'}
               </button>
             ))}
           </div>
@@ -719,98 +663,6 @@ export default function AdminDashboard() {
         {/* Products Tab */}
         {activeTab === 'products' && (
           <div className="space-y-6">
-            {/* File Upload Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-colors">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Upload Product File</h2>
-                <button
-                  onClick={() => {
-                    setShowFileUploadSection(!showFileUploadSection)
-                    if (!showFileUploadSection) {
-                      setSelectedProductForUpload('')
-                      setFileToUpload(null)
-                    }
-                  }}
-                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all font-medium"
-                >
-                  {showFileUploadSection ? '− Hide Upload' : '+ Upload File'}
-                </button>
-              </div>
-              {showFileUploadSection && (
-                <div className="p-6">
-                  <form onSubmit={handleFileUploadSubmit} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Select Product *
-                      </label>
-                      <select
-                        required
-                        value={selectedProductForUpload}
-                        onChange={(e) => setSelectedProductForUpload(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      >
-                        <option value="">Choose an active product...</option>
-                        {products
-                          .filter((p) => p.is_active)
-                          .map((product) => (
-                            <option key={product.id} value={product.id}>
-                              {product.name} {product.product_code ? `(${product.product_code})` : `(ID: ${product.id})`}
-                              {product.file_url ? ' - [File exists]' : ''}
-                            </option>
-                          ))}
-                      </select>
-                      {products.filter((p) => p.is_active).length === 0 && (
-                        <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
-                          No active products available. Please create and activate a product first.
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Select File (ZIP or RAR) *
-                      </label>
-                      <input
-                        type="file"
-                        required
-                        accept=".zip,.rar"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            // Validate file type
-                            const fileName = file.name.toLowerCase()
-                            if (!fileName.endsWith('.zip') && !fileName.endsWith('.rar')) {
-                              alert('Please select a ZIP or RAR file only')
-                              e.target.value = ''
-                              return
-                            }
-                            setFileToUpload(file)
-                          }
-                        }}
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 dark:file:bg-pink-900/30 dark:file:text-pink-300"
-                      />
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        Only ZIP and RAR files are accepted. Maximum file size: 100MB
-                      </p>
-                      {fileToUpload && (
-                        <p className="mt-2 text-sm text-green-600 dark:text-green-400">
-                          Selected: {fileToUpload.name} ({(fileToUpload.size / 1024 / 1024).toFixed(2)} MB)
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        type="submit"
-                        disabled={!selectedProductForUpload || !fileToUpload || uploadingFile !== null}
-                        className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {uploadingFile ? 'Uploading...' : 'Upload File'}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-            </div>
-
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-colors">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Products ({products.length})</h2>
@@ -995,11 +847,6 @@ export default function AdminDashboard() {
                             >
                               Edit
                             </button>
-                            {product.file_url && (
-                              <span className="text-xs text-green-600 dark:text-green-400" title="File uploaded">
-                                ✓ File
-                              </span>
-                            )}
                             <button
                               onClick={() => handleDeleteProduct(product.id)}
                               className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
@@ -1014,6 +861,88 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Orders Tab */}
+        {activeTab === 'orders' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-colors">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Orders ({orders.length})</h2>
+            </div>
+            {ordersLoading ? (
+              <div className="p-6 text-center text-gray-500 dark:text-gray-400">Loading orders...</div>
+            ) : orders.length === 0 ? (
+              <div className="p-6 text-center text-gray-500 dark:text-gray-400">No orders found</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order ID</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Customer</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Email</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Items</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Payment Method</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                    {orders.map((order) => (
+                      <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                          #{order.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {order.customer_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          {order.customer_email}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                          <div className="space-y-1">
+                            {order.items && order.items.length > 0 ? (
+                              order.items.map((item: any, idx: number) => (
+                                <div key={idx} className="text-xs">
+                                  {item.product_name || item.name} × {item.quantity}
+                                  {item.product_code && (
+                                    <span className="ml-1 text-gray-500 dark:text-gray-400">({item.product_code})</span>
+                                  )}
+                                </div>
+                              ))
+                            ) : (
+                              <span className="text-gray-400">No items</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                          ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                          <span className="capitalize">{order.payment_method || 'stripe'}</span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            order.status === 'completed' || order.status === 'paid'
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                              : order.status === 'pending' || order.status === 'payment_pending'
+                              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                          }`}>
+                            {order.status.replace('_', ' ').toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(order.created_at).toLocaleDateString()} {new Date(order.created_at).toLocaleTimeString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 

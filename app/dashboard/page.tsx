@@ -377,21 +377,10 @@ export default function Dashboard() {
                                 </div>
                               </div>
                               <div>
-                                {(order.status === 'paid' || order.status === 'completed') && item.file_url ? (
-                                  <a
-                                    href={`/api/download/product/${item.product_id}`}
-                                    download
-                                    className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-pink-500 to-blue-500 text-white text-xs rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-medium"
-                                  >
-                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                    </svg>
-                                    Download
-                                  </a>
-                                ) : (
-                                  <span className="text-xs text-gray-400 dark:text-gray-500">
-                                    {item.file_url ? 'Payment pending' : 'No file available'}
-                                  </span>
+                                {(order.status === 'paid' || order.status === 'completed') && (
+                                  <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                                    ✓ Paid
+                                  </div>
                                 )}
                               </div>
                             </div>
@@ -401,12 +390,26 @@ export default function Dashboard() {
                         )}
                       </div>
                       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <Link
-                          href={`/payment/${order.id}`}
-                          className="text-sm text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300 font-medium"
-                        >
-                          View Order Details →
-                        </Link>
+                        <div className="space-y-2">
+                          <Link
+                            href={`/payment/${order.id}`}
+                            className="text-sm text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300 font-medium block"
+                          >
+                            View Order Details →
+                          </Link>
+                          {(order.status === 'paid' || order.status === 'completed') && (
+                            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                              <p className="text-xs font-medium text-blue-800 dark:text-blue-300 mb-1">
+                                📦 How to get your files:
+                              </p>
+                              <p className="text-xs text-blue-700 dark:text-blue-400">
+                                1. Open a ticket in our Discord server<br />
+                                2. Send your Order #<strong>{order.id}</strong> and order details<br />
+                                3. Our team will provide your files
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

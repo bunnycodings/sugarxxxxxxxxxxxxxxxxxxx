@@ -250,9 +250,19 @@ export default function PaymentPage() {
               <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 Payment Details Submitted!
               </h1>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Your payment information has been received. Check your email for payment confirmation.
               </p>
+              <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">
+                  📦 How to get your files after payment is confirmed:
+                </p>
+                <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-decimal list-inside">
+                  <li>Open a ticket in our Discord server</li>
+                  <li>Send your Order #{orderId} and order details</li>
+                  <li>Our team will verify your payment and provide your files</li>
+                </ol>
+              </div>
             </div>
             <Link
               href="/"
