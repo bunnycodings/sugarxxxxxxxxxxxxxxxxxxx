@@ -23,7 +23,7 @@ export interface Payment {
 
 export async function createPayment(payment: Payment) {
   try {
-    const paymentMethod = payment.payment_method || 'stripe'
+    const paymentMethod = payment.payment_method || 'wise'
     const paymentStatus = payment.status || 'pending'
     
     // Build dynamic query based on payment method

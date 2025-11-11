@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS orders (
   customer_phone VARCHAR(50),
   total DECIMAL(10, 2) NOT NULL,
   status VARCHAR(50) DEFAULT 'pending',
-  payment_method VARCHAR(50) DEFAULT 'stripe',
+  payment_method VARCHAR(50) DEFAULT 'wise',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_status (status),
@@ -192,7 +192,7 @@ CREATE TABLE IF NOT EXISTS order_items (
 CREATE TABLE IF NOT EXISTS payments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   order_id INT NOT NULL,
-  payment_method VARCHAR(50) DEFAULT 'stripe',
+  payment_method VARCHAR(50) DEFAULT 'wise',
   mtcn_no VARCHAR(100),
   sender_name VARCHAR(255),
   transaction_date DATE,
