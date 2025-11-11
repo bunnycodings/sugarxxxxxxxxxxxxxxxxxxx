@@ -978,7 +978,6 @@ export default function AdminDashboard() {
                             <div className="text-gray-900 dark:text-gray-100 font-mono font-semibold text-pink-600 dark:text-pink-400">
                               {product.product_code || `PD${String(product.id).padStart(6, '0')}`}
                             </div>
-                            <div className="text-xs text-gray-400 dark:text-gray-500">ID: #{product.id}</div>
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{product.name}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{product.category || '-'}</td>
