@@ -117,6 +117,7 @@ export default function Checkout() {
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           items,
           total,
@@ -167,6 +168,7 @@ export default function Checkout() {
       const response = await fetch('/api/redeem-codes/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           code: redeemCode.trim().toUpperCase(),
           items: items
