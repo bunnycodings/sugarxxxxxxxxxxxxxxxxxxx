@@ -14,21 +14,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ products: cachedProducts }, { status: 200 })
     }
 
-    // Only get active products for public view
+    // Get all products
     const products = await getAllProducts()
-    const activeProducts = products
-      .filter((p: any) => p.is_active)
-      .map((p: any) => ({
-        ...p,
-        price: parseFloat(p.price) || 0,
-        stock: parseInt(p.stock) || 0
-      }))
+    const allProducts = products.map((p: any) => ({
+      ...p,
+      price: parseFloat(p.price) || 0,
+      stock: parseInt(p.stock) || 0
+    }))
     
     // Update cache
-    cachedProducts = activeProducts
+    cachedProducts = allProducts
     cacheTimestamp = now
     
-    return NextResponse.json({ products: activeProducts }, { status: 200 })
+    return NextResponse.json({ products: allProducts }, { status: 200 })
   } catch (error: any) {
     console.error('Get products error:', error)
     
