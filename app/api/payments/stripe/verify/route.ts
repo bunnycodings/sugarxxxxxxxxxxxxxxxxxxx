@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getOrderById } from '@/lib/orders'
 import { createPayment } from '@/lib/payments'
+import { sendDiscordWebhook } from '@/lib/discord'
 import pool from '@/lib/db'
 
 export async function POST(request: NextRequest) {
@@ -63,6 +64,30 @@ export async function POST(request: NextRequest) {
         'UPDATE orders SET status = ? WHERE id = ?',
         ['paid', parseInt(orderId)]
       )
+
+      // Send Discord notification
+      try {
+        const updatedOrder = await getOrderById(parseInt(orderId))
+        if (updatedOrder) {
+          await sendDiscordWebhook({
+            orderId: updatedOrder.id!,
+            customerName: updatedOrder.customer_name,
+            customerEmail: updatedOrder.customer_email,
+            total: updatedOrder.total,
+            paymentMethod: 'stripe',
+            status: 'completed',
+            items: updatedOrder.items.map((item: any) => ({
+              name: item.product_name || item.name,
+              quantity: item.quantity,
+              price: item.price,
+              product_code: item.product_code
+            }))
+          })
+        }
+      } catch (discordError) {
+        console.error('Failed to send Discord notification:', discordError)
+        // Don't fail the payment if Discord webhook fails
+      }
     }
 
     return NextResponse.json({ 

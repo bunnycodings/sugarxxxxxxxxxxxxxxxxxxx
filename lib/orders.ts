@@ -80,7 +80,25 @@ export async function getOrderById(id: number) {
       'SELECT * FROM orders WHERE id = ?',
       [id]
     ) as any[]
-    return rows[0] || null
+    
+    if (rows.length === 0) {
+      return null
+    }
+    
+    const order = rows[0]
+    
+    // Get order items with product codes
+    const [itemRows] = await pool.execute(
+      `SELECT oi.*, p.product_code 
+       FROM order_items oi
+       LEFT JOIN products p ON oi.product_id = p.id
+       WHERE oi.order_id = ?`,
+      [id]
+    ) as any[]
+    
+    order.items = itemRows || []
+    
+    return order
   } catch (error: any) {
     if (error.code === 'ER_NO_SUCH_TABLE' || error.message?.includes("doesn't exist")) {
       throw new Error('Database tables not initialized. Please run: npm run setup-db')
