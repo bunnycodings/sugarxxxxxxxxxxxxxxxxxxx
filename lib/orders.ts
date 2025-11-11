@@ -98,6 +98,9 @@ export async function getOrderById(id: number) {
     
     order.items = itemRows || []
     
+    // Normalize total to number (MySQL DECIMAL returns as string)
+    order.total = parseFloat(order.total) || 0
+    
     return order
   } catch (error: any) {
     if (error.code === 'ER_NO_SUCH_TABLE' || error.message?.includes("doesn't exist")) {

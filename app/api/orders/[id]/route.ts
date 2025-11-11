@@ -18,7 +18,13 @@ export async function GET(
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ order }, { status: 200 })
+    // Normalize order total to number (MySQL DECIMAL returns as string)
+    const normalizedOrder = {
+      ...order,
+      total: parseFloat(order.total) || 0
+    }
+
+    return NextResponse.json({ order: normalizedOrder }, { status: 200 })
   } catch (error: any) {
     console.error('Get order error:', error)
     return NextResponse.json({ 

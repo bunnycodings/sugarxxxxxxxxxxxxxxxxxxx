@@ -67,7 +67,9 @@ export default function PaymentPage() {
       if (response.ok) {
         const data = await response.json()
         setOrder(data.order)
-        setPaymentData(prev => ({ ...prev, amount: data.order.total.toFixed(2) }))
+        // Ensure total is a number before calling toFixed
+        const totalAmount = Number(data.order.total) || 0
+        setPaymentData(prev => ({ ...prev, amount: totalAmount.toFixed(2) }))
       } else {
         setError('Order not found')
       }
