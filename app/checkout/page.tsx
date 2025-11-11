@@ -150,6 +150,54 @@ export default function Checkout() {
     }
   }
 
+  const handleRedeemCode = async () => {
+    if (!redeemCode.trim()) {
+      setRedeemCodeError('Please enter a redeem code')
+      return
+    }
+
+    setRedeemCodeError('')
+    setValidatingCode(true)
+
+    try {
+      const response = await fetch('/api/redeem-codes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: redeemCode.trim().toUpperCase(),
+          items: items
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setRedeemCodeError(data.error || 'Invalid redeem code')
+        setAppliedDiscount(null)
+        return
+      }
+
+      // Apply discount
+      setAppliedDiscount({
+        code: data.code,
+        discount_percent: data.discount_percent || 0,
+        discount_amount: data.discount_amount || 0
+      })
+      setRedeemCodeError('')
+    } catch (err) {
+      setRedeemCodeError('Failed to validate redeem code. Please try again.')
+      setAppliedDiscount(null)
+    } finally {
+      setValidatingCode(false)
+    }
+  }
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null)
+    setRedeemCode('')
+    setRedeemCodeError('')
+  }
+
   if (items.length === 0) {
     return (
       <div className="py-12 bg-gradient-to-br from-pink-50 via-white to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 min-h-screen">
