@@ -7,6 +7,14 @@ export async function GET(request: NextRequest) {
   try {
     const cookieStore = await cookies()
     const userSession = cookieStore.get('user_session')
+    
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Session check:', { 
+        hasSession: !!userSession,
+        sessionValue: userSession?.value ? 'exists' : 'missing'
+      })
+    }
 
     if (!userSession) {
       return NextResponse.json({ authenticated: false }, { status: 200 })
