@@ -33,7 +33,10 @@ export default function Checkout() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/verify')
+      const response = await fetch('/api/auth/verify', {
+        credentials: 'include',
+        cache: 'no-store'
+      })
       const data = await response.json()
       
       if (!data.authenticated) {
