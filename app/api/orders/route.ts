@@ -5,7 +5,7 @@ import pool, { executeWithRetry } from '@/lib/db'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { items, total, customer } = body
+    const { items, total, customer, payment_method } = body
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Items are required' }, { status: 400 })
@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
       customer_phone: customer.phone || null,
       total: parseFloat(total),
       status: 'pending',
+      payment_method: payment_method || 'stripe',
       items: items
     })
 

@@ -359,12 +359,24 @@ export async function initializeDatabase() {
         customer_phone VARCHAR(50),
         total DECIMAL(10, 2) NOT NULL,
         status VARCHAR(50) DEFAULT 'pending',
+        payment_method VARCHAR(50) DEFAULT 'stripe',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_status (status),
-        INDEX idx_customer_email (customer_email)
+        INDEX idx_customer_email (customer_email),
+        INDEX idx_payment_method (payment_method)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `)
+    
+    // Add payment_method column to existing orders table if it doesn't exist
+    try {
+      await pool.execute('ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) DEFAULT "stripe"')
+    } catch (e: any) {
+      // Column might already exist
+      if (!e.message?.includes('Duplicate column name')) {
+        console.log('Note: payment_method column may already exist')
+      }
+    }
 
     // Create order_items table
     await pool.execute(`
@@ -386,19 +398,59 @@ export async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS payments (
         id INT AUTO_INCREMENT PRIMARY KEY,
         order_id INT NOT NULL,
-        mtcn_no VARCHAR(100) NOT NULL,
-        sender_name VARCHAR(255) NOT NULL,
-        transaction_date DATE NOT NULL,
+        payment_method VARCHAR(50) DEFAULT 'stripe',
+        mtcn_no VARCHAR(100),
+        sender_name VARCHAR(255),
+        transaction_date DATE,
         amount DECIMAL(10, 2) NOT NULL,
         payment_proof_url TEXT,
+        payer_first_name VARCHAR(255),
+        payer_last_name VARCHAR(255),
+        payer_phone VARCHAR(50),
+        payer_address TEXT,
+        payer_city VARCHAR(100),
+        payer_country VARCHAR(100),
+        stripe_payment_intent_id VARCHAR(255),
+        stripe_checkout_session_id VARCHAR(255),
         status VARCHAR(50) DEFAULT 'pending',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
         INDEX idx_order_id (order_id),
         INDEX idx_mtcn_no (mtcn_no),
-        INDEX idx_status (status)
+        INDEX idx_status (status),
+        INDEX idx_payment_method (payment_method)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `)
+    
+    // Add new columns to existing payments table if they don't exist
+    try {
+      await pool.execute('ALTER TABLE payments ADD COLUMN payment_method VARCHAR(50) DEFAULT "stripe"')
+    } catch (e: any) {
+      if (!e.message?.includes('Duplicate column name')) {
+        console.log('Note: payment_method column may already exist')
+      }
+    }
+    try {
+      await pool.execute('ALTER TABLE payments MODIFY COLUMN mtcn_no VARCHAR(100)')
+      await pool.execute('ALTER TABLE payments MODIFY COLUMN sender_name VARCHAR(255)')
+      await pool.execute('ALTER TABLE payments MODIFY COLUMN transaction_date DATE')
+    } catch (e: any) {
+      // Columns might already be modified
+    }
+    try {
+      await pool.execute('ALTER TABLE payments ADD COLUMN payer_first_name VARCHAR(255)')
+      await pool.execute('ALTER TABLE payments ADD COLUMN payer_last_name VARCHAR(255)')
+      await pool.execute('ALTER TABLE payments ADD COLUMN payer_phone VARCHAR(50)')
+      await pool.execute('ALTER TABLE payments ADD COLUMN payer_address TEXT')
+      await pool.execute('ALTER TABLE payments ADD COLUMN payer_city VARCHAR(100)')
+      await pool.execute('ALTER TABLE payments ADD COLUMN payer_country VARCHAR(100)')
+      await pool.execute('ALTER TABLE payments ADD COLUMN stripe_payment_intent_id VARCHAR(255)')
+      await pool.execute('ALTER TABLE payments ADD COLUMN stripe_checkout_session_id VARCHAR(255)')
+    } catch (e: any) {
+      if (!e.message?.includes('Duplicate column name')) {
+        console.log('Note: Some payment columns may already exist')
+      }
+    }
 
     // Create default admin accounts if they don't exist
     try {

@@ -7,14 +7,36 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const orderId = parseInt(formData.get('orderId') as string)
-    const mtcn_no = formData.get('mtcn_no') as string
+    const payment_method = (formData.get('payment_method') as string) || 'stripe'
+    const transaction_id = formData.get('transaction_id') as string
     const sender_name = formData.get('sender_name') as string
     const transaction_date = formData.get('transaction_date') as string
     const amount = parseFloat(formData.get('amount') as string)
     const payment_proof = formData.get('payment_proof') as File | null
+    
+    // Western Union specific fields
+    const payer_first_name = formData.get('payer_first_name') as string
+    const payer_last_name = formData.get('payer_last_name') as string
+    const payer_phone = formData.get('payer_phone') as string
+    const payer_address = formData.get('payer_address') as string
+    const payer_city = formData.get('payer_city') as string
+    const payer_country = formData.get('payer_country') as string
 
-    if (!orderId || !mtcn_no || !sender_name || !transaction_date || !amount) {
-      return NextResponse.json({ error: 'All required fields must be provided' }, { status: 400 })
+    if (!orderId || !amount) {
+      return NextResponse.json({ error: 'Order ID and amount are required' }, { status: 400 })
+    }
+    
+    // Validate based on payment method
+    if (payment_method === 'wise' || payment_method === 'western_union') {
+      if (!transaction_id || !sender_name || !transaction_date) {
+        return NextResponse.json({ error: 'Transaction ID, sender name, and transaction date are required' }, { status: 400 })
+      }
+    }
+    
+    if (payment_method === 'western_union') {
+      if (!payer_first_name || !payer_last_name || !payer_phone || !payer_address || !payer_city || !payer_country) {
+        return NextResponse.json({ error: 'All payer details are required for Western Union' }, { status: 400 })
+      }
     }
 
     let payment_proof_url: string | undefined = undefined
@@ -38,21 +60,27 @@ export async function POST(request: NextRequest) {
       payment_proof_url = `/uploads/payments/${fileName}`
     }
 
-    const paymentData: {
-      order_id: number
-      mtcn_no: string
-      sender_name: string
-      transaction_date: string
-      amount: number
-      payment_proof_url?: string
-      status: string
-    } = {
+    const paymentData: any = {
       order_id: orderId,
-      mtcn_no,
-      sender_name,
-      transaction_date,
+      payment_method: payment_method,
       amount,
       status: 'pending'
+    }
+    
+    // Add fields based on payment method
+    if (payment_method === 'wise' || payment_method === 'western_union') {
+      paymentData.mtcn_no = transaction_id
+      paymentData.sender_name = sender_name
+      paymentData.transaction_date = transaction_date
+    }
+    
+    if (payment_method === 'western_union') {
+      paymentData.payer_first_name = payer_first_name
+      paymentData.payer_last_name = payer_last_name
+      paymentData.payer_phone = payer_phone
+      paymentData.payer_address = payer_address
+      paymentData.payer_city = payer_city
+      paymentData.payer_country = payer_country
     }
     
     if (payment_proof_url) {

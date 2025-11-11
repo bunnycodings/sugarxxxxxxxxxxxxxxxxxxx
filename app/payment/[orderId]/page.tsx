@@ -11,6 +11,7 @@ interface Order {
   customer_phone?: string
   total: number
   status: string
+  payment_method?: string
   created_at: string
 }
 
@@ -21,12 +22,22 @@ export default function PaymentPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [processingStripe, setProcessingStripe] = useState(false)
   const [paymentData, setPaymentData] = useState({
-    mtcn_no: '',
+    // For Wise and Western Union
+    transaction_id: '',
     sender_name: '',
     transaction_date: '',
     amount: '',
-    payment_proof: null as File | null
+    payment_proof: null as File | null,
+    // For Western Union only
+    payer_first_name: '',
+    payer_last_name: '',
+    payer_phone: '',
+    payer_countryCode: '+1',
+    payer_address: '',
+    payer_city: '',
+    payer_country: ''
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -60,13 +71,56 @@ export default function PaymentPage() {
     }
   }
 
+  const handleStripePayment = async () => {
+    setProcessingStripe(true)
+    setError('')
+    
+    try {
+      const response = await fetch('/api/payments/stripe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to create Stripe payment session')
+        setProcessingStripe(false)
+        return
+      }
+
+      // Redirect to Stripe Checkout
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url
+      } else {
+        setError('No checkout URL received from Stripe')
+        setProcessingStripe(false)
+      }
+    } catch (err) {
+      setError('An error occurred while processing Stripe payment')
+      setProcessingStripe(false)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     
-    if (!paymentData.mtcn_no || !paymentData.sender_name || !paymentData.transaction_date) {
-      setError('Please fill in all required fields')
-      return
+    const paymentMethod = order?.payment_method || 'stripe'
+    
+    if (paymentMethod === 'wise') {
+      if (!paymentData.transaction_id || !paymentData.sender_name || !paymentData.transaction_date) {
+        setError('Please fill in all required fields')
+        return
+      }
+    } else if (paymentMethod === 'western_union') {
+      if (!paymentData.transaction_id || !paymentData.sender_name || !paymentData.transaction_date ||
+          !paymentData.payer_first_name || !paymentData.payer_last_name || !paymentData.payer_phone ||
+          !paymentData.payer_address || !paymentData.payer_city || !paymentData.payer_country) {
+        setError('Please fill in all required fields including payer details')
+        return
+      }
     }
 
     setSubmitting(true)
@@ -74,10 +128,22 @@ export default function PaymentPage() {
     try {
       const formData = new FormData()
       formData.append('orderId', orderId)
-      formData.append('mtcn_no', paymentData.mtcn_no)
+      formData.append('payment_method', paymentMethod)
+      formData.append('transaction_id', paymentData.transaction_id)
       formData.append('sender_name', paymentData.sender_name)
       formData.append('transaction_date', paymentData.transaction_date)
       formData.append('amount', paymentData.amount)
+      
+      if (paymentMethod === 'western_union') {
+        const fullPhoneNumber = paymentData.payer_phone ? `${paymentData.payer_countryCode}${paymentData.payer_phone.replace(/^0+/, '')}` : ''
+        formData.append('payer_first_name', paymentData.payer_first_name)
+        formData.append('payer_last_name', paymentData.payer_last_name)
+        formData.append('payer_phone', fullPhoneNumber)
+        formData.append('payer_address', paymentData.payer_address)
+        formData.append('payer_city', paymentData.payer_city)
+        formData.append('payer_country', paymentData.payer_country)
+      }
+      
       if (paymentData.payment_proof) {
         formData.append('payment_proof', paymentData.payment_proof)
       }
@@ -104,7 +170,8 @@ export default function PaymentPage() {
         body: JSON.stringify({
           orderId,
           customerEmail: order?.customer_email,
-          paymentData
+          paymentData,
+          paymentMethod
         })
       })
 
@@ -154,13 +221,7 @@ export default function PaymentPage() {
                 Payment Details Submitted!
               </h1>
               <p className="text-gray-600 dark:text-gray-300">
-                Your payment information has been received. Check your email for payment instructions.
-              </p>
-            </div>
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-800 dark:text-blue-300">
-                <strong>Note:</strong> An email with payment instructions has been sent to <strong>{order.customer_email}</strong>. 
-                Please check your inbox (and spam folder) for detailed Western Union payment instructions.
+                Your payment information has been received. Check your email for payment confirmation.
               </p>
             </div>
             <Link
@@ -175,6 +236,8 @@ export default function PaymentPage() {
     )
   }
 
+  const paymentMethod = order.payment_method || 'stripe'
+
   return (
     <div className="py-12 bg-gradient-to-br from-pink-50 via-white to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 min-h-screen">
       <div className="container mx-auto px-4">
@@ -188,149 +251,411 @@ export default function PaymentPage() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Payment Instructions */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Send Payment via Western Union
-            </h2>
-            <div className="space-y-4 mb-6">
-              <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
-                  Recipient Information:
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Name:</span>
-                    <span className="ml-2 text-gray-900 dark:text-gray-100">Zhong Jie Yong</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Account Number:</span>
-                    <span className="ml-2 text-gray-900 dark:text-gray-100">1101402249826</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700 dark:text-gray-300">Phone:</span>
-                    <span className="ml-2 text-gray-900 dark:text-gray-100">098-887-0075</span>
+            {paymentMethod === 'stripe' && (
+              <>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                  Pay with Stripe
+                </h2>
+                <div className="space-y-4 mb-6">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      Payment Amount:
+                    </h3>
+                    <p className="text-2xl font-bold text-pink-600 dark:text-pink-400">
+                      ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
                   </div>
                 </div>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  Payment Amount:
-                </h3>
-                <p className="text-2xl font-bold text-pink-600 dark:text-pink-400">
-                  ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
-            </div>
-            <div className="prose dark:prose-invert text-sm text-gray-600 dark:text-gray-300">
-              <p className="mb-2"><strong>Instructions:</strong></p>
-              <ol className="list-decimal list-inside space-y-1">
-                <li>Visit your nearest Western Union location</li>
-                <li>Fill out the send money form with the recipient information above</li>
-                <li>Send the exact amount shown</li>
-                <li>Complete the payment form below with your transaction details</li>
-                <li>Upload a photo of your Western Union receipt</li>
-                <li>Submit the form - you will receive email confirmation</li>
-              </ol>
-            </div>
+                <div className="prose dark:prose-invert text-sm text-gray-600 dark:text-gray-300">
+                  <p className="mb-2"><strong>Instructions:</strong></p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Click the "Pay with Stripe" button below</li>
+                    <li>You will be redirected to Stripe's secure payment page</li>
+                    <li>Enter your credit or debit card details</li>
+                    <li>Complete the payment</li>
+                    <li>You will be redirected back to our site after successful payment</li>
+                  </ol>
+                </div>
+              </>
+            )}
+
+            {paymentMethod === 'wise' && (
+              <>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                  Send Payment via Wise
+                </h2>
+                <div className="space-y-4 mb-6">
+                  <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                      Recipient Information:
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Account Name:</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">Zhong Jie Yong</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Account Number:</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">1101402249826</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Bank:</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">Kasikorn Bank (K-Bank)</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">SWIFT/BIC:</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">KASITHBK</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      Payment Amount:
+                    </h3>
+                    <p className="text-2xl font-bold text-pink-600 dark:text-pink-400">
+                      ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+                <div className="prose dark:prose-invert text-sm text-gray-600 dark:text-gray-300">
+                  <p className="mb-2"><strong>Instructions:</strong></p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Log in to your Wise account or create one at wise.com</li>
+                    <li>Start a new transfer to Thailand (THB)</li>
+                    <li>Enter the recipient information shown above</li>
+                    <li>Send the exact amount shown</li>
+                    <li>Complete the transfer and save your transaction ID</li>
+                    <li>Fill out the payment form on the right and upload your transfer receipt</li>
+                    <li>Submit the form - you will receive email confirmation</li>
+                  </ol>
+                </div>
+              </>
+            )}
+
+            {paymentMethod === 'western_union' && (
+              <>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                  Send Payment via Western Union
+                </h2>
+                <div className="space-y-4 mb-6">
+                  <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                      Recipient Information:
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Name:</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">Zhong Jie Yong</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Account Number:</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">1101402249826</span>
+                      </div>
+                      <div>
+                        <span className="font-medium text-gray-700 dark:text-gray-300">Phone:</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">098-887-0075</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      Payment Amount:
+                    </h3>
+                    <p className="text-2xl font-bold text-pink-600 dark:text-pink-400">
+                      ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+                <div className="prose dark:prose-invert text-sm text-gray-600 dark:text-gray-300">
+                  <p className="mb-2"><strong>Instructions:</strong></p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Visit your nearest Western Union location or use their website</li>
+                    <li>Fill out the send money form with the recipient information above</li>
+                    <li>Send the exact amount shown</li>
+                    <li>Complete the payment form below with your transaction details and payer information</li>
+                    <li>Upload a photo of your Western Union receipt</li>
+                    <li>Submit the form - you will receive email confirmation</li>
+                  </ol>
+                  <p className="mt-4 text-xs text-yellow-600 dark:text-yellow-400">
+                    <strong>Important:</strong> Please provide accurate payer details so the seller can claim the money.
+                  </p>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Payment Form */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-              Payment Details
-            </h2>
-
-            {error && (
-              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="mtcn_no" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  MTCN No: *
-                </label>
-                <input
-                  type="text"
-                  id="mtcn_no"
-                  required
-                  value={paymentData.mtcn_no}
-                  onChange={(e) => setPaymentData({ ...paymentData, mtcn_no: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  placeholder="Enter MTCN number"
-                />
-              </div>
-              <div>
-                <label htmlFor="sender_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Sender Name: *
-                </label>
-                <input
-                  type="text"
-                  id="sender_name"
-                  required
-                  value={paymentData.sender_name}
-                  onChange={(e) => setPaymentData({ ...paymentData, sender_name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  placeholder="Enter sender's full name"
-                />
-              </div>
-              <div>
-                <label htmlFor="transaction_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Transaction Date: *
-                </label>
-                <input
-                  type="date"
-                  id="transaction_date"
-                  required
-                  value={paymentData.transaction_date}
-                  onChange={(e) => setPaymentData({ ...paymentData, transaction_date: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                />
-              </div>
-              <div>
-                <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Amount (THB): *
-                </label>
-                <input
-                  type="number"
-                  id="amount"
-                  step="0.01"
-                  required
-                  value={paymentData.amount}
-                  onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  placeholder="Enter amount sent"
-                />
-              </div>
-              <div>
-                <label htmlFor="payment_proof" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Upload Payment Receipt (Optional)
-                </label>
-                <input
-                  type="file"
-                  id="payment_proof"
-                  accept="image/*,.pdf"
-                  onChange={handleFileChange}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-pink-50 dark:file:bg-pink-900/30 file:text-pink-700 dark:file:text-pink-300 file:cursor-pointer"
-                />
-                {paymentData.payment_proof && (
-                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                    Selected: {paymentData.payment_proof.name}
-                  </p>
+            {paymentMethod === 'stripe' ? (
+              <>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+                  Secure Payment
+                </h2>
+                {error && (
+                  <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
+                    {error}
+                  </div>
                 )}
-              </div>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-semibold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {submitting ? 'Submitting...' : 'Submit Payment Details'}
-              </button>
-            </form>
+                <button
+                  onClick={handleStripePayment}
+                  disabled={processingStripe}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-semibold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {processingStripe ? 'Processing...' : 'Pay with Stripe'}
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+                  Payment Details
+                </h2>
+
+                {error && (
+                  <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label htmlFor="transaction_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {paymentMethod === 'western_union' ? 'MTCN No' : 'Transaction ID'} *
+                    </label>
+                    <input
+                      type="text"
+                      id="transaction_id"
+                      required
+                      value={paymentData.transaction_id}
+                      onChange={(e) => setPaymentData({ ...paymentData, transaction_id: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder={paymentMethod === 'western_union' ? 'Enter MTCN number' : 'Enter transaction ID'}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="sender_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Sender Name: *
+                    </label>
+                    <input
+                      type="text"
+                      id="sender_name"
+                      required
+                      value={paymentData.sender_name}
+                      onChange={(e) => setPaymentData({ ...paymentData, sender_name: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="Enter sender's full name"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="transaction_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Transaction Date: *
+                    </label>
+                    <input
+                      type="date"
+                      id="transaction_date"
+                      required
+                      value={paymentData.transaction_date}
+                      onChange={(e) => setPaymentData({ ...paymentData, transaction_date: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Amount (THB): *
+                    </label>
+                    <input
+                      type="number"
+                      id="amount"
+                      step="0.01"
+                      required
+                      value={paymentData.amount}
+                      onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="Enter amount sent"
+                    />
+                  </div>
+
+                  {paymentMethod === 'western_union' && (
+                    <>
+                      <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                          Payer Details (Required for Western Union)
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label htmlFor="payer_first_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              First Name *
+                            </label>
+                            <input
+                              type="text"
+                              id="payer_first_name"
+                              required
+                              value={paymentData.payer_first_name}
+                              onChange={(e) => setPaymentData({ ...paymentData, payer_first_name: e.target.value })}
+                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="payer_last_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Last Name *
+                            </label>
+                            <input
+                              type="text"
+                              id="payer_last_name"
+                              required
+                              value={paymentData.payer_last_name}
+                              onChange={(e) => setPaymentData({ ...paymentData, payer_last_name: e.target.value })}
+                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <label htmlFor="payer_phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Phone Number *
+                          </label>
+                          <div className="flex gap-2">
+                            <select
+                              id="payer_countryCode"
+                              value={paymentData.payer_countryCode}
+                              onChange={(e) => setPaymentData({ ...paymentData, payer_countryCode: e.target.value })}
+                              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            >
+                              <option value="+1">+1 (US/Canada)</option>
+                              <option value="+44">+44 (UK)</option>
+                              <option value="+66">+66 (Thailand)</option>
+                              <option value="+65">+65 (Singapore)</option>
+                              <option value="+60">+60 (Malaysia)</option>
+                              <option value="+62">+62 (Indonesia)</option>
+                              <option value="+63">+63 (Philippines)</option>
+                              <option value="+84">+84 (Vietnam)</option>
+                              <option value="+86">+86 (China)</option>
+                              <option value="+81">+81 (Japan)</option>
+                              <option value="+82">+82 (South Korea)</option>
+                              <option value="+61">+61 (Australia)</option>
+                              <option value="+64">+64 (New Zealand)</option>
+                              <option value="+91">+91 (India)</option>
+                              <option value="+971">+971 (UAE)</option>
+                              <option value="+973">+973 (Bahrain)</option>
+                              <option value="+974">+974 (Qatar)</option>
+                              <option value="+965">+965 (Kuwait)</option>
+                              <option value="+966">+966 (Saudi Arabia)</option>
+                              <option value="+972">+972 (Israel)</option>
+                              <option value="+27">+27 (South Africa)</option>
+                              <option value="+49">+49 (Germany)</option>
+                              <option value="+33">+33 (France)</option>
+                              <option value="+39">+39 (Italy)</option>
+                              <option value="+34">+34 (Spain)</option>
+                              <option value="+31">+31 (Netherlands)</option>
+                              <option value="+32">+32 (Belgium)</option>
+                              <option value="+41">+41 (Switzerland)</option>
+                              <option value="+46">+46 (Sweden)</option>
+                              <option value="+47">+47 (Norway)</option>
+                              <option value="+45">+45 (Denmark)</option>
+                              <option value="+358">+358 (Finland)</option>
+                              <option value="+351">+351 (Portugal)</option>
+                              <option value="+353">+353 (Ireland)</option>
+                              <option value="+48">+48 (Poland)</option>
+                              <option value="+420">+420 (Czech Republic)</option>
+                              <option value="+36">+36 (Hungary)</option>
+                              <option value="+40">+40 (Romania)</option>
+                              <option value="+7">+7 (Russia/Kazakhstan)</option>
+                              <option value="+90">+90 (Turkey)</option>
+                              <option value="+20">+20 (Egypt)</option>
+                              <option value="+52">+52 (Mexico)</option>
+                              <option value="+55">+55 (Brazil)</option>
+                              <option value="+54">+54 (Argentina)</option>
+                              <option value="+56">+56 (Chile)</option>
+                              <option value="+57">+57 (Colombia)</option>
+                              <option value="+51">+51 (Peru)</option>
+                            </select>
+                            <input
+                              type="tel"
+                              id="payer_phone"
+                              required
+                              value={paymentData.payer_phone}
+                              onChange={(e) => setPaymentData({ ...paymentData, payer_phone: e.target.value })}
+                              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                              placeholder="Enter phone number"
+                            />
+                          </div>
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Format: {paymentData.payer_countryCode === '+66' ? '9XX-XXX-XXXX' : 'Enter phone number without leading 0'}
+                          </p>
+                        </div>
+                        <div className="mt-4">
+                          <label htmlFor="payer_address" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Address *
+                          </label>
+                          <input
+                            type="text"
+                            id="payer_address"
+                            required
+                            value={paymentData.payer_address}
+                            onChange={(e) => setPaymentData({ ...paymentData, payer_address: e.target.value })}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 mt-4">
+                          <div>
+                            <label htmlFor="payer_city" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              City *
+                            </label>
+                            <input
+                              type="text"
+                              id="payer_city"
+                              required
+                              value={paymentData.payer_city}
+                              onChange={(e) => setPaymentData({ ...paymentData, payer_city: e.target.value })}
+                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            />
+                          </div>
+                          <div>
+                            <label htmlFor="payer_country" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                              Country *
+                            </label>
+                            <input
+                              type="text"
+                              id="payer_country"
+                              required
+                              value={paymentData.payer_country}
+                              onChange={(e) => setPaymentData({ ...paymentData, payer_country: e.target.value })}
+                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div>
+                    <label htmlFor="payment_proof" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Upload Payment Receipt (Optional but Recommended)
+                    </label>
+                    <input
+                      type="file"
+                      id="payment_proof"
+                      accept="image/*,.pdf"
+                      onChange={handleFileChange}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-pink-50 dark:file:bg-pink-900/30 file:text-pink-700 dark:file:text-pink-300 file:cursor-pointer"
+                    />
+                    {paymentData.payment_proof && (
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        Selected: {paymentData.payment_proof.name}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-semibold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {submitting ? 'Submitting...' : 'Submit Payment Details'}
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
       </div>
     </div>
   )
 }
-

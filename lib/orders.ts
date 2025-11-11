@@ -7,6 +7,7 @@ export interface Order {
   customer_phone?: string
   total: number
   status: string
+  payment_method?: string
   items: any[]
   created_at?: string
   updated_at?: string
@@ -30,13 +31,14 @@ export async function createOrder(order: Order) {
 
       // Create order
       const [orderResult] = await connection.execute(
-        'INSERT INTO orders (customer_name, customer_email, customer_phone, total, status) VALUES (?, ?, ?, ?, ?)',
+        'INSERT INTO orders (customer_name, customer_email, customer_phone, total, status, payment_method) VALUES (?, ?, ?, ?, ?, ?)',
         [
           order.customer_name,
           order.customer_email,
           order.customer_phone || null,
           order.total,
-          'pending'
+          'pending',
+          order.payment_method || 'stripe'
         ]
       ) as any[]
 
