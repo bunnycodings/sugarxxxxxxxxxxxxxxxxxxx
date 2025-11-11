@@ -192,7 +192,7 @@ export default function Dashboard() {
               onClick={() => setShowPasswordReset(true)}
               className="mt-4 w-full px-4 py-2 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all text-sm font-medium"
             >
-              Reset Password
+              Change Password
             </button>
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
@@ -231,7 +231,7 @@ export default function Dashboard() {
         {showPasswordReset && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 max-w-md w-full transition-colors">
-              <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Reset Password</h2>
+              <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-100">Change Password</h2>
               
               {passwordError && (
                 <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
