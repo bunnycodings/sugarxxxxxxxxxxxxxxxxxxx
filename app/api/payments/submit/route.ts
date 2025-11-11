@@ -43,6 +43,24 @@ export async function POST(request: NextRequest) {
 
     // Handle file upload if provided
     if (payment_proof && payment_proof.size > 0) {
+      // Validate file type - only PDF allowed
+      const fileType = payment_proof.type
+      const fileName = payment_proof.name.toLowerCase()
+      
+      if (fileType !== 'application/pdf' && !fileName.endsWith('.pdf')) {
+        return NextResponse.json({ 
+          error: 'Only PDF files are accepted for payment receipts' 
+        }, { status: 400 })
+      }
+
+      // Validate file size (max 10MB)
+      const maxSize = 10 * 1024 * 1024 // 10MB
+      if (payment_proof.size > maxSize) {
+        return NextResponse.json({ 
+          error: 'File size must be less than 10MB' 
+        }, { status: 400 })
+      }
+
       const bytes = await payment_proof.arrayBuffer()
       const buffer = Buffer.from(bytes)
       
@@ -53,11 +71,11 @@ export async function POST(request: NextRequest) {
         // Directory might already exist
       }
 
-      const fileName = `payment_${orderId}_${Date.now()}_${payment_proof.name}`
-      const filePath = join(uploadsDir, fileName)
+      const safeFileName = `payment_${orderId}_${Date.now()}_${payment_proof.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+      const filePath = join(uploadsDir, safeFileName)
       await writeFile(filePath, buffer)
       
-      payment_proof_url = `/uploads/payments/${fileName}`
+      payment_proof_url = `/uploads/payments/${safeFileName}`
     }
 
     const paymentData: any = {

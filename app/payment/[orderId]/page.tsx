@@ -67,7 +67,15 @@ export default function PaymentPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setPaymentData({ ...paymentData, payment_proof: e.target.files[0] })
+      const file = e.target.files[0]
+      // Check if file is PDF
+      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        setError('Please upload a PDF file only')
+        e.target.value = '' // Clear the input
+        return
+      }
+      setError('') // Clear any previous errors
+      setPaymentData({ ...paymentData, payment_proof: file })
     }
   }
 
@@ -633,10 +641,13 @@ export default function PaymentPage() {
                     <input
                       type="file"
                       id="payment_proof"
-                      accept="image/*,.pdf"
+                      accept=".pdf,application/pdf"
                       onChange={handleFileChange}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-pink-50 dark:file:bg-pink-900/30 file:text-pink-700 dark:file:text-pink-300 file:cursor-pointer"
                     />
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      Only PDF files are accepted
+                    </p>
                     {paymentData.payment_proof && (
                       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                         Selected: {paymentData.payment_proof.name}
