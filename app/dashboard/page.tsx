@@ -51,7 +51,10 @@ export default function Dashboard() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/verify')
+      const response = await fetch('/api/auth/verify', {
+        credentials: 'include',
+        cache: 'no-store'
+      })
       if (response.ok) {
         const data = await response.json()
         if (data.authenticated) {
@@ -71,7 +74,10 @@ export default function Dashboard() {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/orders/user')
+      const response = await fetch('/api/orders/user', {
+        credentials: 'include',
+        cache: 'no-store'
+      })
       if (response.ok) {
         const data = await response.json()
         setOrders(data.orders || [])
@@ -117,6 +123,7 @@ export default function Dashboard() {
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword
