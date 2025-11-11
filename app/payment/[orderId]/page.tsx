@@ -150,9 +150,7 @@ export default function PaymentPage() {
         formData.append('payer_country', paymentData.payer_country)
       }
       
-      if (paymentData.payment_proof) {
-        formData.append('payment_proof', paymentData.payment_proof)
-      }
+      // Payment receipt should be submitted via Discord ticket, not file upload
 
       const response = await fetch('/api/payments/submit', {
         method: 'POST',
@@ -322,8 +320,9 @@ export default function PaymentPage() {
                     <li>Enter the recipient information shown above</li>
                     <li>Send the exact amount shown</li>
                     <li>Complete the transfer and save your transaction ID</li>
-                    <li>Fill out the payment form on the right and upload your transfer receipt</li>
+                    <li>Fill out the payment form on the right with your transaction details</li>
                     <li>Submit the form - you will receive email confirmation</li>
+                    <li><strong>After submitting:</strong> Open a ticket in our Discord server and submit your payment receipt (image or PDF) along with your Order #{orderId}</li>
                   </ol>
                 </div>
               </>
@@ -370,8 +369,8 @@ export default function PaymentPage() {
                     <li>Fill out the send money form with the recipient information above</li>
                     <li>Send the exact amount shown</li>
                     <li>Complete the payment form below with your transaction details and payer information</li>
-                    <li>Upload a photo of your Western Union receipt</li>
                     <li>Submit the form - you will receive email confirmation</li>
+                    <li><strong>After submitting:</strong> Open a ticket in our Discord server and submit your payment receipt (image or PDF) along with your Order #{orderId}</li>
                   </ol>
                   <p className="mt-4 text-xs text-yellow-600 dark:text-yellow-400">
                     <strong>Important:</strong> Please provide accurate payer details so the seller can claim the money.
@@ -604,25 +603,13 @@ export default function PaymentPage() {
                     </>
                   )}
 
-                  <div>
-                    <label htmlFor="payment_proof" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Upload Payment Receipt (Optional but Recommended)
-                    </label>
-                    <input
-                      type="file"
-                      id="payment_proof"
-                      accept=".pdf,application/pdf"
-                      onChange={handleFileChange}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-pink-50 dark:file:bg-pink-900/30 file:text-pink-700 dark:file:text-pink-300 file:cursor-pointer"
-                    />
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                      Only PDF files are accepted
+                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">
+                      📋 Submit Payment Receipt:
                     </p>
-                    {paymentData.payment_proof && (
-                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        Selected: {paymentData.payment_proof.name}
-                      </p>
-                    )}
+                    <p className="text-sm text-blue-700 dark:text-blue-400">
+                      After submitting this form, please open a ticket in our Discord server and submit your payment receipt (image or PDF) along with your Order #{orderId}. Our team will verify your payment and provide your files.
+                    </p>
                   </div>
                   <button
                     type="submit"
