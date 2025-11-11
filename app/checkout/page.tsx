@@ -14,7 +14,7 @@ export default function Checkout() {
     phone: '',
     countryCode: '+66' // Default to Thailand
   })
-  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'wise' | 'western_union'>('stripe')
+  const [paymentMethod, setPaymentMethod] = useState<'wise' | 'western_union'>('wise')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
@@ -296,19 +296,7 @@ export default function Checkout() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Payment Method *
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentMethod('stripe')}
-                      className={`p-4 border-2 rounded-lg transition-all ${
-                        paymentMethod === 'stripe'
-                          ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-pink-300 dark:hover:border-pink-700'
-                      }`}
-                    >
-                      <div className="font-semibold text-gray-900 dark:text-gray-100">Stripe</div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Credit/Debit Card</div>
-                    </button>
+                  <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('wise')}

@@ -22,7 +22,6 @@ export default function PaymentPage() {
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  const [processingStripe, setProcessingStripe] = useState(false)
   const [paymentSettings, setPaymentSettings] = useState({
     wise_account_name: 'Zhong Jie Yong',
     wise_account_number: '1101402249826',
@@ -109,44 +108,12 @@ export default function PaymentPage() {
     }
   }
 
-  const handleStripePayment = async () => {
-    setProcessingStripe(true)
-    setError('')
-    
-    try {
-      const response = await fetch('/api/payments/stripe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ orderId })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to create Stripe payment session')
-        setProcessingStripe(false)
-        return
-      }
-
-      // Redirect to Stripe Checkout
-      if (data.checkout_url) {
-        window.location.href = data.checkout_url
-      } else {
-        setError('No checkout URL received from Stripe')
-        setProcessingStripe(false)
-      }
-    } catch (err) {
-      setError('An error occurred while processing Stripe payment')
-      setProcessingStripe(false)
-    }
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     
-    const paymentMethod = order?.payment_method || 'stripe'
+    const paymentMethod = order?.payment_method || 'wise'
     
     if (paymentMethod === 'wise') {
       if (!paymentData.transaction_id || !paymentData.sender_name || !paymentData.transaction_date) {
@@ -287,7 +254,7 @@ export default function PaymentPage() {
     )
   }
 
-  const paymentMethod = order.payment_method || 'stripe'
+  const paymentMethod = order.payment_method || 'wise'
 
   return (
     <div className="py-12 bg-gradient-to-br from-pink-50 via-white to-blue-50 dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 min-h-screen">
@@ -301,7 +268,7 @@ export default function PaymentPage() {
         {(Number(order.total) || 0) === 0 && (
           <div className="mb-8 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
             <p className="text-sm font-semibold text-green-800 dark:text-green-300">
-              🎉 This is a free product! You can proceed with Wise or Western Union for testing. Stripe cannot process 0 amount orders.
+              🎉 This is a free product! You can proceed with Wise or Western Union for testing.
             </p>
           </div>
         )}
@@ -309,34 +276,6 @@ export default function PaymentPage() {
         <div className="grid md:grid-cols-2 gap-8">
           {/* Payment Instructions */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-            {paymentMethod === 'stripe' && (
-              <>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  Pay with Stripe
-                </h2>
-                <div className="space-y-4 mb-6">
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                      Payment Amount:
-                    </h3>
-                    <p className="text-2xl font-bold text-pink-600 dark:text-pink-400">
-                      ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                </div>
-                <div className="prose dark:prose-invert text-sm text-gray-600 dark:text-gray-300">
-                  <p className="mb-2"><strong>Instructions:</strong></p>
-                  <ol className="list-decimal list-inside space-y-1">
-                    <li>Click the "Pay with Stripe" button below</li>
-                    <li>You will be redirected to Stripe's secure payment page</li>
-                    <li>Enter your credit or debit card details</li>
-                    <li>Complete the payment</li>
-                    <li>You will be redirected back to our site after successful payment</li>
-                  </ol>
-                </div>
-              </>
-            )}
-
             {paymentMethod === 'wise' && (
               <>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
@@ -444,26 +383,7 @@ export default function PaymentPage() {
 
           {/* Payment Form */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
-            {paymentMethod === 'stripe' ? (
-              <>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
-                  Secure Payment
-                </h2>
-                {error && (
-                  <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-700 text-red-700 dark:text-red-300 rounded-lg text-sm">
-                    {error}
-                  </div>
-                )}
-                <button
-                  onClick={handleStripePayment}
-                  disabled={processingStripe}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-semibold text-lg shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {processingStripe ? 'Processing...' : 'Pay with Stripe'}
-                </button>
-              </>
-            ) : (
-              <>
+            <>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
                   Payment Details
                 </h2>

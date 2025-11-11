@@ -38,7 +38,7 @@ export async function createOrder(order: Order) {
           order.customer_phone || null,
           order.total,
           'pending',
-          order.payment_method || 'stripe'
+          order.payment_method || 'wise'
         ]
       ) as any[]
 

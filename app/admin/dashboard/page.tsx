@@ -509,6 +509,38 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleUpdateOrderStatus = async (orderId: number, newStatus: string) => {
+    try {
+      setUpdatingStatus(true)
+      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/admin/login')
+          return
+        }
+        throw new Error('Failed to update order status')
+      }
+
+      // Refresh orders list
+      await fetchOrders()
+      
+      // Update selected order if it's the one being updated
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus })
+      }
+    } catch (err) {
+      console.error('Error updating order status:', err)
+      alert('Failed to update order status. Please try again.')
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' })
     router.push('/admin/login')
