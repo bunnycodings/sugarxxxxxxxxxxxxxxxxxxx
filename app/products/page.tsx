@@ -26,16 +26,17 @@ export default function Products() {
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      // Add cache busting only if needed, otherwise use cache
       const response = await fetch('/api/products', {
-        next: { revalidate: 60 } // Revalidate every 60 seconds
+        cache: 'no-store' // Always fetch fresh data
       })
-      // Always try to parse the response, even if status is not OK
-      // The API now returns empty array instead of error
+      if (!response.ok) {
+        throw new Error('Failed to fetch products')
+      }
       const data = await response.json()
       setProducts(data.products || [])
     } catch (err) {
       // On error, just set empty array to show friendly message
+      console.error('Error fetching products:', err)
       setProducts([])
     } finally {
       setLoading(false)
