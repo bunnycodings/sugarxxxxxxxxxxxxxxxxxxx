@@ -69,6 +69,17 @@ export default function Checkout() {
       return
     }
 
+    // Validate total before submitting
+    if (!total || total <= 0 || isNaN(total)) {
+      setError('Invalid cart total. Please refresh the page and try again.')
+      return
+    }
+
+    if (items.length === 0) {
+      setError('Your cart is empty. Please add items before checkout.')
+      return
+    }
+
     setLoading(true)
 
     try {

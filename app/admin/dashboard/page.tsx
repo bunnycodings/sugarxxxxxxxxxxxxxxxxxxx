@@ -146,15 +146,21 @@ export default function AdminDashboard() {
       const response = await fetch('/api/admin/users')
       if (!response.ok) {
         if (response.status === 401) {
+          // Expected when not logged in - silently redirect
           router.push('/admin/login')
           return
         }
+        // Only log non-401 errors
+        console.error('Error fetching users:', response.status, response.statusText)
         return
       }
       const data = await response.json()
       setUsers(data.users || [])
     } catch (err) {
-      console.error('Error fetching users:', err)
+      // Only log if it's not a navigation error (expected during redirect)
+      if (err instanceof Error && !err.message.includes('redirect')) {
+        console.error('Error fetching users:', err)
+      }
     } finally {
       setUsersLoading(false)
     }

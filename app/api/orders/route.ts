@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createOrder } from '@/lib/orders'
 import pool, { executeWithRetry } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -11,8 +13,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Items are required' }, { status: 400 })
     }
 
-    if (!total || total <= 0) {
-      return NextResponse.json({ error: 'Valid total is required' }, { status: 400 })
+    // Validate total - check for null, undefined, NaN, or <= 0
+    const totalValue = typeof total === 'string' ? parseFloat(total) : Number(total)
+    if (!totalValue || isNaN(totalValue) || totalValue <= 0) {
+      console.error('Invalid total received:', { total, totalValue, type: typeof total })
+      return NextResponse.json({ 
+        error: 'Valid total is required. Please refresh the page and try again.' 
+      }, { status: 400 })
     }
 
     if (!customer || !customer.name || !customer.email) {
@@ -57,7 +64,7 @@ export async function POST(request: NextRequest) {
       customer_name: customer.name,
       customer_email: customer.email,
       customer_phone: customer.phone || null,
-      total: parseFloat(total),
+      total: totalValue, // Use the validated totalValue
       status: 'pending',
       payment_method: payment_method || 'stripe',
       items: items
