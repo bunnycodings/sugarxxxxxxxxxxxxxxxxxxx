@@ -483,6 +483,22 @@ export async function initializeDatabase() {
       }
     }
 
+    // Create payment_settings table
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS payment_settings (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        wise_account_name VARCHAR(255) DEFAULT 'Zhong Jie Yong',
+        wise_account_number VARCHAR(100) DEFAULT '1101402249826',
+        wise_bank VARCHAR(255) DEFAULT 'Kasikorn Bank (K-Bank)',
+        wise_swift VARCHAR(50) DEFAULT 'KASITHBK',
+        western_union_name VARCHAR(255) DEFAULT 'Zhong Jie Yong',
+        western_union_account_number VARCHAR(100) DEFAULT '1101402249826',
+        western_union_phone VARCHAR(50) DEFAULT '098-887-0075',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `)
+
     // Create default admin accounts if they don't exist
     try {
       

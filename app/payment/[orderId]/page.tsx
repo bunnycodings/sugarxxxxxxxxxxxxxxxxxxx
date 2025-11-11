@@ -23,6 +23,15 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [processingStripe, setProcessingStripe] = useState(false)
+  const [paymentSettings, setPaymentSettings] = useState({
+    wise_account_name: 'Zhong Jie Yong',
+    wise_account_number: '1101402249826',
+    wise_bank: 'Kasikorn Bank (K-Bank)',
+    wise_swift: 'KASITHBK',
+    western_union_name: 'Zhong Jie Yong',
+    western_union_account_number: '1101402249826',
+    western_union_phone: '098-887-0075'
+  })
   const [paymentData, setPaymentData] = useState({
     // For Wise and Western Union
     transaction_id: '',
@@ -45,6 +54,7 @@ export default function PaymentPage() {
   useEffect(() => {
     if (orderId) {
       fetchOrder()
+      fetchPaymentSettings()
     }
   }, [orderId])
 
@@ -62,6 +72,18 @@ export default function PaymentPage() {
       setError('Failed to load order')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchPaymentSettings = async () => {
+    try {
+      const response = await fetch('/api/payment-settings')
+      if (response.ok) {
+        const data = await response.json()
+        setPaymentSettings(data)
+      }
+    } catch (err) {
+      console.error('Failed to load payment settings')
     }
   }
 
@@ -300,19 +322,19 @@ export default function PaymentPage() {
                     <div className="space-y-2 text-sm">
                       <div>
                         <span className="font-medium text-gray-700 dark:text-gray-300">Account Name:</span>
-                        <span className="ml-2 text-gray-900 dark:text-gray-100">Zhong Jie Yong</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">{paymentSettings.wise_account_name}</span>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700 dark:text-gray-300">Account Number:</span>
-                        <span className="ml-2 text-gray-900 dark:text-gray-100">1101402249826</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">{paymentSettings.wise_account_number}</span>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700 dark:text-gray-300">Bank:</span>
-                        <span className="ml-2 text-gray-900 dark:text-gray-100">Kasikorn Bank (K-Bank)</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">{paymentSettings.wise_bank}</span>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700 dark:text-gray-300">SWIFT/BIC:</span>
-                        <span className="ml-2 text-gray-900 dark:text-gray-100">KASITHBK</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">{paymentSettings.wise_swift}</span>
                       </div>
                     </div>
                   </div>
@@ -353,15 +375,15 @@ export default function PaymentPage() {
                     <div className="space-y-2 text-sm">
                       <div>
                         <span className="font-medium text-gray-700 dark:text-gray-300">Name:</span>
-                        <span className="ml-2 text-gray-900 dark:text-gray-100">Zhong Jie Yong</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">{paymentSettings.western_union_name}</span>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700 dark:text-gray-300">Account Number:</span>
-                        <span className="ml-2 text-gray-900 dark:text-gray-100">1101402249826</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">{paymentSettings.western_union_account_number}</span>
                       </div>
                       <div>
                         <span className="font-medium text-gray-700 dark:text-gray-300">Phone:</span>
-                        <span className="ml-2 text-gray-900 dark:text-gray-100">098-887-0075</span>
+                        <span className="ml-2 text-gray-900 dark:text-gray-100">{paymentSettings.western_union_phone}</span>
                       </div>
                     </div>
                   </div>

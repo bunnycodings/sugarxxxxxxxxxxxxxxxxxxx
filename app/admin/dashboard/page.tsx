@@ -50,7 +50,7 @@ interface Review {
   created_at: string
 }
 
-type Tab = 'users' | 'products' | 'redeem-codes' | 'reviews'
+type Tab = 'users' | 'products' | 'redeem-codes' | 'reviews' | 'payments'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -97,6 +97,20 @@ export default function AdminDashboard() {
   // Reviews state
   const [reviews, setReviews] = useState<Review[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
+  
+  // Payment Settings state
+  const [paymentSettings, setPaymentSettings] = useState({
+    wise_account_name: 'Zhong Jie Yong',
+    wise_account_number: '1101402249826',
+    wise_bank: 'Kasikorn Bank (K-Bank)',
+    wise_swift: 'KASITHBK',
+    western_union_name: 'Zhong Jie Yong',
+    western_union_account_number: '1101402249826',
+    western_union_phone: '098-887-0075'
+  })
+  const [paymentSettingsLoading, setPaymentSettingsLoading] = useState(false)
+  const [paymentSettingsSaving, setPaymentSettingsSaving] = useState(false)
+  const [paymentSettingsSuccess, setPaymentSettingsSuccess] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -104,6 +118,7 @@ export default function AdminDashboard() {
     if (activeTab === 'products') fetchProducts()
     if (activeTab === 'redeem-codes') fetchRedeemCodes()
     if (activeTab === 'reviews') fetchReviews()
+    if (activeTab === 'payments') fetchPaymentSettings()
   }, [activeTab])
 
   const checkAuth = async () => {
@@ -405,6 +420,56 @@ export default function AdminDashboard() {
     }
   }
 
+  // Payment Settings functions
+  const fetchPaymentSettings = async () => {
+    try {
+      setPaymentSettingsLoading(true)
+      const response = await fetch('/api/admin/payment-settings')
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/admin/login')
+          return
+        }
+        return
+      }
+      const data = await response.json()
+      if (data.settings) {
+        setPaymentSettings(data.settings)
+      }
+    } catch (err) {
+      console.error('Error fetching payment settings:', err)
+    } finally {
+      setPaymentSettingsLoading(false)
+    }
+  }
+
+  const handleSavePaymentSettings = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPaymentSettingsSaving(true)
+    setPaymentSettingsSuccess(false)
+
+    try {
+      const response = await fetch('/api/admin/payment-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentSettings)
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        alert(data.error || 'Failed to save payment settings')
+        return
+      }
+
+      setPaymentSettingsSuccess(true)
+      setTimeout(() => setPaymentSettingsSuccess(false), 3000)
+    } catch (err) {
+      alert('An error occurred. Please try again.')
+    } finally {
+      setPaymentSettingsSaving(false)
+    }
+  }
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' })
     router.push('/admin/login')
@@ -442,7 +507,7 @@ export default function AdminDashboard() {
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex space-x-1">
-            {(['users', 'products', 'redeem-codes', 'reviews'] as Tab[]).map((tab) => (
+            {(['users', 'products', 'redeem-codes', 'reviews', 'payments'] as Tab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -452,7 +517,7 @@ export default function AdminDashboard() {
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
                 }`}
               >
-                {tab === 'users' ? 'Users' : tab === 'products' ? 'Products' : tab === 'redeem-codes' ? 'Redeem Codes' : 'Reviews'}
+                {tab === 'users' ? 'Users' : tab === 'products' ? 'Products' : tab === 'redeem-codes' ? 'Redeem Codes' : tab === 'reviews' ? 'Reviews' : 'Payment Settings'}
               </button>
             ))}
           </div>
@@ -904,6 +969,123 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Payment Settings Tab */}
+        {activeTab === 'payments' && (
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-colors">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Payment Settings</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Configure payment recipient information for Wise and Western Union</p>
+            </div>
+            {paymentSettingsLoading ? (
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading payment settings...</div>
+            ) : (
+              <div className="p-6">
+                {paymentSettingsSuccess && (
+                  <div className="mb-4 p-3 bg-green-100 dark:bg-green-900/30 border border-green-400 dark:border-green-700 text-green-700 dark:text-green-300 rounded-lg text-sm">
+                    Payment settings saved successfully!
+                  </div>
+                )}
+                <form onSubmit={handleSavePaymentSettings} className="space-y-6">
+                  {/* Wise Settings */}
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Wise Payment Settings</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account Name *</label>
+                        <input
+                          type="text"
+                          required
+                          value={paymentSettings.wise_account_name}
+                          onChange={(e) => setPaymentSettings({ ...paymentSettings, wise_account_name: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account Number *</label>
+                        <input
+                          type="text"
+                          required
+                          value={paymentSettings.wise_account_number}
+                          onChange={(e) => setPaymentSettings({ ...paymentSettings, wise_account_number: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bank Name *</label>
+                        <input
+                          type="text"
+                          required
+                          value={paymentSettings.wise_bank}
+                          onChange={(e) => setPaymentSettings({ ...paymentSettings, wise_bank: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">SWIFT/BIC Code *</label>
+                        <input
+                          type="text"
+                          required
+                          value={paymentSettings.wise_swift}
+                          onChange={(e) => setPaymentSettings({ ...paymentSettings, wise_swift: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Western Union Settings */}
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Western Union Payment Settings</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Recipient Name *</label>
+                        <input
+                          type="text"
+                          required
+                          value={paymentSettings.western_union_name}
+                          onChange={(e) => setPaymentSettings({ ...paymentSettings, western_union_name: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account Number *</label>
+                        <input
+                          type="text"
+                          required
+                          value={paymentSettings.western_union_account_number}
+                          onChange={(e) => setPaymentSettings({ ...paymentSettings, western_union_account_number: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone Number *</label>
+                        <input
+                          type="text"
+                          required
+                          value={paymentSettings.western_union_phone}
+                          onChange={(e) => setPaymentSettings({ ...paymentSettings, western_union_phone: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          placeholder="098-887-0075"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={paymentSettingsSaving}
+                      className="px-6 py-2 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {paymentSettingsSaving ? 'Saving...' : 'Save Settings'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         )}
 
