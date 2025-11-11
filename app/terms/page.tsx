@@ -95,8 +95,6 @@ export default function TermsOfService() {
               <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 mb-4 space-y-2 ml-4">
                 <li>All sales are final unless otherwise stated</li>
                 <li>Refunds may be considered on a case-by-case basis</li>
-                <li>Refund requests must be submitted within 48 hours of purchase</li>
-                <li>Approved refunds may take 7-14 business days to process</li>
               </ul>
             </section>
 
