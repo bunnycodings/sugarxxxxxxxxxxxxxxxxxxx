@@ -145,11 +145,21 @@ export default function ProductDetail() {
                   ฿{(Number(product.price) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
-              <div className="mb-6">
-                <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-lg">
-                  {product.description || 'No description available for this product.'}
-                </p>
-              </div>
+              {product.description && (
+                <div className="mb-6">
+                  <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                    Product Descriptions
+                  </h2>
+                  <div className="space-y-2">
+                    {product.description.split('\n').filter(line => line.trim()).map((line, index) => (
+                      <div key={index} className="flex items-start text-gray-600 dark:text-gray-300 leading-relaxed">
+                        <span className="mr-3 text-pink-600 dark:text-pink-400 font-bold">-</span>
+                        <span>{line.trim()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="mb-6">
                 <span className={`inline-block px-4 py-2 rounded-lg font-medium ${
                   product.stock > 0 
