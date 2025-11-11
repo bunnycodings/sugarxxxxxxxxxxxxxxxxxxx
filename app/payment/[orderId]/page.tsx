@@ -60,7 +60,10 @@ export default function PaymentPage() {
 
   const fetchOrder = async () => {
     try {
-      const response = await fetch(`/api/orders/${orderId}`)
+      const response = await fetch(`/api/orders/${orderId}`, {
+        credentials: 'include',
+        cache: 'no-store'
+      })
       if (response.ok) {
         const data = await response.json()
         setOrder(data.order)
@@ -77,7 +80,10 @@ export default function PaymentPage() {
 
   const fetchPaymentSettings = async () => {
     try {
-      const response = await fetch('/api/payment-settings')
+      const response = await fetch('/api/payment-settings', {
+        credentials: 'include',
+        cache: 'no-store'
+      })
       if (response.ok) {
         const data = await response.json()
         setPaymentSettings(data)
@@ -109,6 +115,7 @@ export default function PaymentPage() {
       const response = await fetch('/api/payments/stripe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ orderId })
       })
 
@@ -180,6 +187,7 @@ export default function PaymentPage() {
 
       const response = await fetch('/api/payments/submit', {
         method: 'POST',
+        credentials: 'include',
         body: formData
       })
 
@@ -197,6 +205,7 @@ export default function PaymentPage() {
       await fetch('/api/payments/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           orderId,
           customerEmail: order?.customer_email,

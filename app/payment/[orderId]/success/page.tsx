@@ -28,6 +28,7 @@ export default function PaymentSuccess() {
       const response = await fetch('/api/payments/stripe/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           orderId,
           sessionId
