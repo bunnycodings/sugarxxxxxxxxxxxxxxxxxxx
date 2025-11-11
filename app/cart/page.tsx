@@ -17,7 +17,10 @@ export default function Cart() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/verify')
+      const response = await fetch('/api/auth/verify', {
+        credentials: 'include',
+        cache: 'no-store'
+      })
       const data = await response.json()
       if (!response.ok || !data.authenticated) {
         router.push('/login?redirect=/cart')

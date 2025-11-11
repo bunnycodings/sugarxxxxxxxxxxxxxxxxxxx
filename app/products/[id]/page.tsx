@@ -36,7 +36,10 @@ export default function ProductDetail() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/verify')
+      const response = await fetch('/api/auth/verify', {
+        credentials: 'include',
+        cache: 'no-store'
+      })
       const data = await response.json()
       setIsAuthenticated(data.authenticated || false)
     } catch (error) {
