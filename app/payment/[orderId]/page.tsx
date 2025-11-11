@@ -37,7 +37,6 @@ export default function PaymentPage() {
     sender_name: '',
     transaction_date: '',
     amount: '',
-    payment_proof: null as File | null,
     // For Western Union only
     payer_first_name: '',
     payer_last_name: '',
@@ -221,8 +220,8 @@ export default function PaymentPage() {
                   📋 Next Steps:
                 </p>
                 <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-decimal list-inside">
-                  <li>Open a ticket in our Discord server</li>
-                  <li>Submit your payment receipt (image or PDF) along with your Order #{orderId}</li>
+                  <li>Contact us via Discord and open a ticket</li>
+                  <li>Submit your Order #{orderId} and payment receipt (image or PDF)</li>
                   <li>Our team will verify your payment and provide your files</li>
                 </ol>
               </div>
@@ -309,7 +308,7 @@ export default function PaymentPage() {
                     <li>Complete the transfer and save your transaction ID</li>
                     <li>Fill out the payment form on the right with your transaction details</li>
                     <li>Submit the form - you will receive email confirmation</li>
-                    <li><strong>After submitting:</strong> Open a ticket in our Discord server and submit your payment receipt (image or PDF) along with your Order #{orderId}</li>
+                    <li><strong>After submitting:</strong> Contact us via Discord and open a ticket with your Order #{orderId} and payment receipt</li>
                   </ol>
                 </div>
               </>
@@ -357,7 +356,7 @@ export default function PaymentPage() {
                     <li>Send the exact amount shown</li>
                     <li>Complete the payment form below with your transaction details and payer information</li>
                     <li>Submit the form - you will receive email confirmation</li>
-                    <li><strong>After submitting:</strong> Open a ticket in our Discord server and submit your payment receipt (image or PDF) along with your Order #{orderId}</li>
+                    <li><strong>After submitting:</strong> Contact us via Discord and open a ticket with your Order #{orderId} and payment receipt</li>
                   </ol>
                   <p className="mt-4 text-xs text-yellow-600 dark:text-yellow-400">
                     <strong>Important:</strong> Please provide accurate payer details so the seller can claim the money.
@@ -590,13 +589,25 @@ export default function PaymentPage() {
                     </>
                   )}
 
-                  <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">
-                      📋 Submit Payment Receipt:
-                    </p>
-                    <p className="text-sm text-blue-700 dark:text-blue-400">
-                      After submitting this form, please open a ticket in our Discord server and submit your payment receipt (image or PDF) along with your Order #{orderId}. Our team will verify your payment and provide your files.
-                    </p>
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-pink-50 dark:from-blue-900/20 dark:to-pink-900/20 border-2 border-blue-300 dark:border-blue-700 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="text-2xl">💬</div>
+                      <div className="flex-1">
+                        <p className="text-base font-bold text-blue-900 dark:text-blue-200 mb-2">
+                          Contact Us via Discord
+                        </p>
+                        <p className="text-sm text-blue-800 dark:text-blue-300 mb-3">
+                          After submitting this form, please contact us via Discord and open a ticket with:
+                        </p>
+                        <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside ml-2">
+                          <li>Your Order #{orderId}</li>
+                          <li>Payment receipt (image or PDF)</li>
+                        </ul>
+                        <p className="text-sm font-semibold text-blue-900 dark:text-blue-200 mt-3">
+                          Our team will verify your payment and provide your files.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                   <button
                     type="submit"
