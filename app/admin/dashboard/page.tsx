@@ -103,6 +103,8 @@ export default function AdminDashboard() {
   // Orders state
   const [orders, setOrders] = useState<any[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
+  const [updatingStatus, setUpdatingStatus] = useState(false)
   
   // Payment Settings state
   const [paymentSettings, setPaymentSettings] = useState({
