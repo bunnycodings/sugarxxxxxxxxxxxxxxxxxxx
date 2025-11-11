@@ -59,7 +59,22 @@ export default function Checkout() {
     }
   }
 
-  const originalTotal = getTotal()
+  // Calculate original total with validation
+  const calculateOriginalTotal = () => {
+    if (!items || items.length === 0) return 0
+    
+    return items.reduce((sum, item) => {
+      const price = Number(item.price) || 0
+      const quantity = Number(item.quantity) || 0
+      if (isNaN(price) || isNaN(quantity) || price < 0 || quantity < 0) {
+        console.warn('Invalid cart item:', item)
+        return sum
+      }
+      return sum + (price * quantity)
+    }, 0)
+  }
+  
+  const originalTotal = calculateOriginalTotal()
   
   // Calculate discounted total
   const calculateDiscountedTotal = () => {
@@ -98,14 +113,35 @@ export default function Checkout() {
       return
     }
 
-    // Validate total before submitting
-    if (!total || total <= 0 || isNaN(total)) {
-      setError('Invalid cart total. Please refresh the page and try again.')
+    // Validate items and total before submitting
+    if (items.length === 0) {
+      setError('Your cart is empty. Please add items before checkout.')
       return
     }
 
-    if (items.length === 0) {
-      setError('Your cart is empty. Please add items before checkout.')
+    // Validate that all items have valid prices
+    const invalidItems = items.filter(item => {
+      const price = Number(item.price)
+      const quantity = Number(item.quantity)
+      return isNaN(price) || isNaN(quantity) || price <= 0 || quantity <= 0
+    })
+
+    if (invalidItems.length > 0) {
+      setError('Some items in your cart have invalid prices. Please refresh the page and try again.')
+      return
+    }
+
+    // Validate total
+    const calculatedTotal = calculateDiscountedTotal()
+    if (!calculatedTotal || calculatedTotal <= 0 || isNaN(calculatedTotal)) {
+      console.error('Invalid total calculation:', { 
+        originalTotal, 
+        total, 
+        calculatedTotal, 
+        items,
+        appliedDiscount 
+      })
+      setError('Invalid cart total. Please refresh the page and try again.')
       return
     }
 
@@ -119,8 +155,13 @@ export default function Checkout() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          items,
-          total,
+          items: items.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: Number(item.price) || 0,
+            quantity: Number(item.quantity) || 0
+          })),
+          total: calculatedTotal,
           payment_method: paymentMethod,
           redeem_code: appliedDiscount?.code || null,
           customer: {
