@@ -16,6 +16,12 @@ export async function GET(request: NextRequest) {
 
     // Get all products
     const products = await getAllProducts()
+    
+    // Ensure products is an array (handles build-time when DB might not be available)
+    if (!products || !Array.isArray(products)) {
+      return NextResponse.json({ products: [] }, { status: 200 })
+    }
+    
     const allProducts = products.map((p: any) => ({
       ...p,
       price: parseFloat(p.price) || 0,
