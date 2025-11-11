@@ -48,7 +48,8 @@ export default function Navbar() {
     const checkUserStatus = async () => {
       try {
         const response = await fetch('/api/auth/verify', {
-          credentials: 'include'
+          credentials: 'include',
+          cache: 'no-store'
         })
         if (!isMounted) return
         
@@ -62,6 +63,7 @@ export default function Navbar() {
         }
       } catch (error) {
         if (!isMounted) return
+        // Silently handle errors - this is expected if user is not logged in
         setIsUser(false)
         setUserEmail('')
       }
@@ -100,12 +102,18 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      })
       setIsUser(false)
       setUserEmail('')
       window.location.href = '/'
     } catch (error) {
-      console.error('Logout error:', error)
+      // Silently handle logout errors
+      setIsUser(false)
+      setUserEmail('')
+      window.location.href = '/'
     }
   }
 
