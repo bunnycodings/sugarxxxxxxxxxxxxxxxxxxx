@@ -18,6 +18,14 @@ export default function Checkout() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [redeemCode, setRedeemCode] = useState('')
+  const [redeemCodeError, setRedeemCodeError] = useState('')
+  const [validatingCode, setValidatingCode] = useState(false)
+  const [appliedDiscount, setAppliedDiscount] = useState<{
+    code: string
+    discount_percent: number
+    discount_amount: number
+  } | null>(null)
 
   useEffect(() => {
     checkAuth()
@@ -48,7 +56,25 @@ export default function Checkout() {
     }
   }
 
-  const total = getTotal()
+  const originalTotal = getTotal()
+  
+  // Calculate discounted total
+  const calculateDiscountedTotal = () => {
+    if (!appliedDiscount) return originalTotal
+    
+    let discount = 0
+    if (appliedDiscount.discount_percent > 0) {
+      discount = (originalTotal * appliedDiscount.discount_percent) / 100
+    } else if (appliedDiscount.discount_amount > 0) {
+      discount = appliedDiscount.discount_amount
+    }
+    
+    const discountedTotal = Math.max(0, originalTotal - discount)
+    return discountedTotal
+  }
+  
+  const total = calculateDiscountedTotal()
+  const discountAmount = appliedDiscount ? originalTotal - total : 0
 
   if (isCheckingAuth) {
     return (

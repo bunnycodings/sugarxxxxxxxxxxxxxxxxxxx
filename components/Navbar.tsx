@@ -134,9 +134,6 @@ export default function Navbar() {
             <Link href="/website" className="text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition-colors font-medium">
               Website
             </Link>
-            <Link href="/redeem" className="text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition-colors font-medium">
-              Redeem
-            </Link>
             <Link href="/reviews" className="text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition-colors font-medium">
               Reviews
             </Link>
@@ -251,9 +248,6 @@ export default function Navbar() {
               </Link>
               <Link href="/website" className="text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition-colors font-medium py-2">
                 Website
-              </Link>
-              <Link href="/redeem" className="text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition-colors font-medium py-2">
-                Redeem
               </Link>
               <Link href="/reviews" className="text-gray-700 dark:text-gray-300 hover:text-pink-600 dark:hover:text-pink-400 transition-colors font-medium py-2">
                 Reviews
