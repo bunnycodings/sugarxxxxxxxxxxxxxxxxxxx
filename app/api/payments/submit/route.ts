@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const orderId = parseInt(formData.get('orderId') as string)
-    const payment_method = (formData.get('payment_method') as string) || 'stripe'
+    const payment_method = (formData.get('payment_method') as string) || 'wise'
     const transaction_id = formData.get('transaction_id') as string
     const sender_name = formData.get('sender_name') as string
     const transaction_date = formData.get('transaction_date') as string
