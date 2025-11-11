@@ -32,9 +32,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const savedCart = localStorage.getItem('cart')
       if (savedCart) {
         try {
-          setItems(JSON.parse(savedCart))
+          const parsed = JSON.parse(savedCart)
+          // Ensure all prices and quantities are numbers
+          const normalized = parsed.map((item: any) => ({
+            ...item,
+            price: Number(item.price) || 0,
+            quantity: Number(item.quantity) || 1
+          }))
+          setItems(normalized)
         } catch (e) {
           console.error('Error loading cart:', e)
+          setItems([])
         }
       }
     }
@@ -49,15 +57,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (product: Omit<CartItem, 'quantity'>) => {
     setItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.id === product.id)
+      // Ensure price is a number
+      const normalizedProduct = {
+        ...product,
+        price: Number(product.price) || 0
+      }
+      
+      const existingItem = prevItems.find((item) => item.id === normalizedProduct.id)
       if (existingItem) {
         return prevItems.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+          item.id === normalizedProduct.id
+            ? { ...item, quantity: item.quantity + 1, price: Number(item.price) || 0 }
+            : { ...item, price: Number(item.price) || 0 }
         )
       }
-      return [...prevItems, { ...product, quantity: 1 }]
+      return [...prevItems.map(item => ({ ...item, price: Number(item.price) || 0 })), { ...normalizedProduct, quantity: 1 }]
     })
   }
 
@@ -82,7 +96,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const getTotal = () => {
-    return items.reduce((total, item) => total + item.price * item.quantity, 0)
+    return items.reduce((total, item) => {
+      const price = Number(item.price) || 0
+      const quantity = Number(item.quantity) || 0
+      return total + (price * quantity)
+    }, 0)
   }
 
   const getItemCount = () => {
