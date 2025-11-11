@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllProducts } from '@/lib/products'
 
+export const dynamic = 'force-dynamic'
+
 // Cache products for 60 seconds
 let cachedProducts: any[] | null = null
 let cacheTimestamp = 0
