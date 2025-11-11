@@ -7,6 +7,7 @@ import TopBar from '@/components/TopBar'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import BlackRibbon from '@/components/BlackRibbon'
+import { Analytics } from '@vercel/analytics/next'
 
 const comicNeue = Comic_Neue({ 
   subsets: ['latin'],
@@ -62,6 +63,7 @@ export default function RootLayout({
             <Footer />
           </CartProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   )
