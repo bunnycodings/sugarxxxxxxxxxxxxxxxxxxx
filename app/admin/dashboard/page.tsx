@@ -80,7 +80,6 @@ export default function AdminDashboard() {
     stock: '',
     is_active: true
   })
-  const [generatingDescription, setGeneratingDescription] = useState(false)
   
   // Redeem Codes state
   const [redeemCodes, setRedeemCodes] = useState<RedeemCode[]>([])
@@ -655,48 +654,13 @@ export default function AdminDashboard() {
                         />
                       </div>
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
-                          {productForm.image_url && (
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                if (!productForm.image_url) {
-                                  alert('Please enter an image URL first')
-                                  return
-                                }
-                                setGeneratingDescription(true)
-                                try {
-                                  const response = await fetch('/api/admin/generate-description', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ imageUrl: productForm.image_url })
-                                  })
-                                  const data = await response.json()
-                                  if (response.ok && data.description) {
-                                    setProductForm({ ...productForm, description: data.description })
-                                  } else {
-                                    alert(data.error || 'Failed to generate description')
-                                  }
-                                } catch (err) {
-                                  alert('An error occurred while generating description')
-                                } finally {
-                                  setGeneratingDescription(false)
-                                }
-                              }}
-                              disabled={generatingDescription}
-                              className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                              {generatingDescription ? 'Generating...' : 'Generate from Image'}
-                            </button>
-                          )}
-                        </div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Description</label>
                         <textarea
                           value={productForm.description}
                           onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
                           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                           rows={4}
-                          placeholder="Enter product description or generate from image..."
+                          placeholder="Enter product description..."
                         />
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           Tip: Each line will be displayed as a bullet point on the product page
