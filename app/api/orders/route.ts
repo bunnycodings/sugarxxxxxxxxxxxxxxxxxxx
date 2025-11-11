@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { items, total, customer, payment_method } = body
+    const { items, total, customer, payment_method, redeem_code } = body
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ error: 'Items are required' }, { status: 400 })
@@ -69,6 +69,19 @@ export async function POST(request: NextRequest) {
       payment_method: payment_method || 'stripe',
       items: items
     })
+
+    // If redeem code was used, increment its usage count
+    if (redeem_code) {
+      try {
+        await pool.execute(
+          'UPDATE redeem_codes SET used_count = COALESCE(used_count, 0) + 1 WHERE code = ?',
+          [redeem_code.toUpperCase().trim()]
+        )
+      } catch (redeemError) {
+        console.error('Failed to update redeem code usage:', redeemError)
+        // Don't fail the order if redeem code update fails
+      }
+    }
 
     return NextResponse.json({ 
       success: true,
