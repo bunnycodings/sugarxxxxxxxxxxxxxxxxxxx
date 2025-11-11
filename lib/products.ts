@@ -93,6 +93,10 @@ export async function updateProduct(id: number, product: Partial<Product>) {
     const updates: string[] = []
     const values: any[] = []
 
+    if (product.product_code !== undefined) {
+      updates.push('product_code = ?')
+      values.push(product.product_code || null)
+    }
     if (product.name !== undefined) {
       updates.push('name = ?')
       values.push(product.name)
