@@ -27,27 +27,54 @@ const dbConfig = {
 let pool: mysql.Pool | null = null
 
 function getPool(): mysql.Pool {
+  // Don't create pool during build
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    throw new Error('Database pool should not be accessed during build phase')
+  }
+  
   if (!pool) {
     pool = mysql.createPool(dbConfig)
   }
   return pool
 }
 
-// Export the pool instance
-const poolInstance = getPool()
+// Export the pool with lazy initialization using Proxy
+// This prevents pool creation during build phase
+export default new Proxy({} as mysql.Pool, {
+  get(target, prop) {
+    // During build, return no-op functions
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      if (typeof prop === 'string' && (prop === 'execute' || prop === 'getConnection')) {
+        return () => Promise.resolve([])
+      }
+      return undefined
+    }
+    
+    // At runtime, get the actual pool and return the property
+    const poolInstance = getPool()
+    const value = (poolInstance as any)[prop]
+    return typeof value === 'function' ? value.bind(poolInstance) : value
+  }
+})
 
 // Note: mysql2/promise pool doesn't support event handlers like 'error'
 // Errors are handled at the query/connection level via try/catch blocks
 
 // Test connection on startup (skip during build)
-if (process.env.NEXT_PHASE !== 'phase-production-build') {
-  poolInstance.getConnection()
-    .then((connection) => {
-      console.log('✅ Database connection successful')
-      connection.release()
-    })
-    .catch((error) => {
-      console.error('❌ Database connection failed:', error.message)
+// Only run in server environment, not during build or in browser
+if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build') {
+  // Only test connection in runtime, not during build
+  // Use setTimeout to avoid blocking module initialization
+  setTimeout(() => {
+    try {
+      const poolInstance = getPool()
+      poolInstance.getConnection()
+        .then((connection) => {
+          console.log('✅ Database connection successful')
+          connection.release()
+        })
+        .catch((error) => {
+          console.error('❌ Database connection failed:', error.message)
     console.error('')
     if (error.code === 'ER_ACCESS_DENIED_ERROR' || error.errno === 1045) {
       // Extract IP from error message if available
@@ -180,7 +207,11 @@ if (process.env.NEXT_PHASE !== 'phase-production-build') {
       console.error('   - MySQL server is running')
       console.error('   - Database exists (or create it through your hosting control panel)')
     }
-  })
+      })
+    } catch (err) {
+      // Silently fail during initialization - errors are logged above
+    }
+  }, 100) // Small delay to not block module loading
 }
 
 // Initialize database tables automatically
@@ -499,15 +530,18 @@ export async function initializeDatabase() {
 }
 
 // Auto-initialize database on startup (only in server environment, not during build)
-if (typeof window === 'undefined' && process.env.NEXT_PHASE !== 'phase-production-build') {
-  // Only initialize if we're not in build phase
-  // Check if we're actually running (not building)
-  if (process.env.NODE_ENV !== 'production' || process.env.VERCEL_ENV || process.env.RUNTIME_ENV) {
+// Skip during build phase completely
+if (typeof window === 'undefined' && 
+    process.env.NEXT_PHASE !== 'phase-production-build' &&
+    process.env.NEXT_PHASE !== 'phase-production-server') {
+  // Only initialize if we're actually running (not building)
+  // Use setTimeout to avoid blocking module initialization
+  setTimeout(() => {
     initializeDatabase().catch(() => {
       // Silent fail - initialization errors are logged above
       // This is expected during build time when DB is not available
     })
-  }
+  }, 200) // Delay to ensure we're not in build phase
 }
 
 // Helper function to execute queries with retry logic for connection errors
@@ -547,6 +581,5 @@ export async function executeWithRetry<T>(
   throw lastError
 }
 
-// Export the pool instance (use poolInstance, not getPool, to maintain singleton)
-export default poolInstance
+// Pool is exported above with lazy initialization
 
