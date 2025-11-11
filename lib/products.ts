@@ -2,6 +2,7 @@ import pool, { executeWithRetry } from './db'
 
 export interface Product {
   id?: number
+  product_code?: string
   name: string
   description?: string
   price: number
@@ -17,7 +18,7 @@ export interface Product {
 export async function getAllProducts() {
   try {
     const [rows] = await pool.execute(
-      'SELECT id, name, description, price, category, image_url, file_url, stock, is_active, created_at FROM products ORDER BY created_at DESC'
+      'SELECT id, product_code, name, description, price, category, image_url, file_url, stock, is_active, created_at FROM products ORDER BY created_at DESC'
     ) as any[]
     return rows
   } catch (error: any) {
@@ -45,11 +46,12 @@ export async function getProductById(id: number) {
 
 export async function createProduct(product: Product) {
   try {
-    // Insert product and get the auto-generated ID
+    // Insert product first to get the auto-generated ID
     const result = await executeWithRetry(async () =>
       pool.execute(
-        'INSERT INTO products (name, description, price, category, image_url, stock, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO products (product_code, name, description, price, category, image_url, stock, is_active) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [
+          product.product_code || null,
           product.name,
           product.description || null,
           product.price,
@@ -63,6 +65,19 @@ export async function createProduct(product: Product) {
     
     const [insertResult] = result
     const productId = insertResult.insertId
+    
+    // Auto-generate product code if not provided
+    if (!product.product_code) {
+      const productCode = `PD${String(productId).padStart(6, '0')}`
+      
+      // Update the product with the generated code
+      await executeWithRetry(async () =>
+        pool.execute(
+          'UPDATE products SET product_code = ? WHERE id = ?',
+          [productCode, productId]
+        )
+      )
+    }
     
     return productId
   } catch (error: any) {
