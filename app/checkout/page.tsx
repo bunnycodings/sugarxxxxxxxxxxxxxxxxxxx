@@ -118,6 +118,7 @@ export default function Checkout() {
           items,
           total,
           payment_method: paymentMethod,
+          redeem_code: appliedDiscount?.code || null,
           customer: {
             ...customerInfo,
             phone: fullPhoneNumber
@@ -287,6 +288,56 @@ export default function Checkout() {
                   </div>
                 </div>
                 <div>
+                  <label htmlFor="redeemCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Redeem Code
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      id="redeemCode"
+                      value={redeemCode}
+                      onChange={(e) => setRedeemCode(e.target.value.toUpperCase())}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleRedeemCode()
+                        }
+                      }}
+                      disabled={validatingCode || !!appliedDiscount}
+                      className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                      placeholder="Enter redeem code"
+                    />
+                    {appliedDiscount ? (
+                      <button
+                        type="button"
+                        onClick={handleRemoveDiscount}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all font-medium"
+                      >
+                        Remove
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleRedeemCode}
+                        disabled={validatingCode || !redeemCode.trim()}
+                        className="px-4 py-2 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {validatingCode ? 'Checking...' : 'Apply'}
+                      </button>
+                    )}
+                  </div>
+                  {redeemCodeError && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">{redeemCodeError}</p>
+                  )}
+                  {appliedDiscount && (
+                    <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+                      ✓ Discount applied: {appliedDiscount.discount_percent > 0 
+                        ? `${appliedDiscount.discount_percent}% off` 
+                        : `฿${appliedDiscount.discount_amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} off`}
+                    </p>
+                  )}
+                </div>
+                <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Full Name *
                   </label>
@@ -415,10 +466,31 @@ export default function Checkout() {
                   </div>
                 ))}
               </div>
+              {appliedDiscount && discountAmount > 0 && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                    <span>Subtotal</span>
+                    <span className="line-through">฿{originalTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
+                    <span>Discount ({appliedDiscount.code})</span>
+                    <span>-฿{discountAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  </div>
+                </div>
+              )}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-gray-100">
                   <span>Total</span>
-                  <span>฿{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <div className="flex flex-col items-end">
+                    {appliedDiscount && discountAmount > 0 && (
+                      <span className="text-sm font-normal text-gray-500 dark:text-gray-400 line-through mb-1">
+                        ฿{originalTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    )}
+                    <span className="text-pink-600 dark:text-pink-400">
+                      ฿{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
