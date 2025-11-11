@@ -300,6 +300,7 @@ export async function initializeDatabase() {
         price DECIMAL(10, 2) NOT NULL,
         category VARCHAR(100),
         image_url VARCHAR(500),
+        file_url VARCHAR(500),
         stock INT DEFAULT 0,
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -309,6 +310,15 @@ export async function initializeDatabase() {
         INDEX idx_product_code (product_code)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `)
+    
+    // Add file_url column to existing products table if it doesn't exist
+    try {
+      await pool.execute('ALTER TABLE products ADD COLUMN file_url VARCHAR(500)')
+    } catch (e: any) {
+      if (!e.message?.includes('Duplicate column name')) {
+        console.log('Note: file_url column may already exist')
+      }
+    }
     
     // Add product_code column to existing products if it doesn't exist
     try {

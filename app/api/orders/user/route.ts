@@ -27,7 +27,21 @@ export async function GET(request: NextRequest) {
       [userId]
     ) as any[]
 
-    return NextResponse.json({ orders: rows || [] }, { status: 200 })
+    // Get order items with product file URLs for each order
+    const ordersWithItems = await Promise.all(
+      rows.map(async (order: any) => {
+        const [items] = await pool.execute(
+          `SELECT oi.*, p.file_url 
+           FROM order_items oi
+           LEFT JOIN products p ON oi.product_id = p.id
+           WHERE oi.order_id = ?`,
+          [order.id]
+        ) as any[]
+        return { ...order, items: items || [] }
+      })
+    )
+
+    return NextResponse.json({ orders: ordersWithItems || [] }, { status: 200 })
   } catch (error: any) {
     console.error('Get user orders error:', error)
     return NextResponse.json({ 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
 
@@ -19,6 +19,7 @@ interface Product {
   price: number
   category?: string
   image_url?: string
+  file_url?: string
   stock: number
   is_active: boolean
   created_at: string
@@ -80,6 +81,8 @@ export default function AdminDashboard() {
     stock: '',
     is_active: true
   })
+  const [uploadingFile, setUploadingFile] = useState<number | null>(null)
+  const fileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({})
   
   // Redeem Codes state
   const [redeemCodes, setRedeemCodes] = useState<RedeemCode[]>([])
@@ -470,6 +473,42 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleFileUpload = async (productId: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingFile(productId)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('productId', productId.toString())
+
+      const response = await fetch('/api/admin/products/upload-file', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        alert(data.error || 'Failed to upload file')
+        return
+      }
+
+      // Refresh products list
+      fetchProducts()
+      alert('File uploaded successfully!')
+    } catch (err) {
+      alert('An error occurred while uploading the file')
+    } finally {
+      setUploadingFile(null)
+      // Reset file input
+      if (fileInputRefs.current[productId]) {
+        fileInputRefs.current[productId]!.value = ''
+      }
+    }
+  }
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' })
     router.push('/admin/login')
@@ -804,6 +843,28 @@ export default function AdminDashboard() {
                             >
                               Edit
                             </button>
+                            <input
+                              type="file"
+                              ref={(el) => {
+                                fileInputRefs.current[product.id] = el
+                              }}
+                              onChange={(e) => handleFileUpload(product.id, e)}
+                              className="hidden"
+                              accept=".zip,.rar,.7z,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                            />
+                            <button
+                              onClick={() => fileInputRefs.current[product.id]?.click()}
+                              disabled={uploadingFile === product.id}
+                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={product.file_url ? 'Replace file' : 'Upload file'}
+                            >
+                              {uploadingFile === product.id ? 'Uploading...' : product.file_url ? 'Replace File' : 'Upload File'}
+                            </button>
+                            {product.file_url && (
+                              <span className="text-xs text-green-600 dark:text-green-400" title="File uploaded">
+                                ✓
+                              </span>
+                            )}
                             <button
                               onClick={() => handleDeleteProduct(product.id)}
                               className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"

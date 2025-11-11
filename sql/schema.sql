@@ -91,17 +91,20 @@ VALUES (
 
 CREATE TABLE IF NOT EXISTS products (
   id INT AUTO_INCREMENT PRIMARY KEY,
+  product_code VARCHAR(20) UNIQUE,
   name VARCHAR(255) NOT NULL,
   description TEXT,
   price DECIMAL(10, 2) NOT NULL,
   category VARCHAR(100),
   image_url VARCHAR(500),
+  file_url VARCHAR(500),
   stock INT DEFAULT 0,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_category (category),
-  INDEX idx_is_active (is_active)
+  INDEX idx_is_active (is_active),
+  INDEX idx_product_code (product_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
@@ -145,6 +148,103 @@ CREATE TABLE IF NOT EXISTS reviews (
   INDEX idx_user_id (user_id),
   INDEX idx_is_approved (is_approved),
   INDEX idx_rating (rating)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- Orders Table
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  customer_name VARCHAR(255) NOT NULL,
+  customer_email VARCHAR(255) NOT NULL,
+  customer_phone VARCHAR(50),
+  total DECIMAL(10, 2) NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending',
+  payment_method VARCHAR(50) DEFAULT 'stripe',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_status (status),
+  INDEX idx_customer_email (customer_email),
+  INDEX idx_payment_method (payment_method)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- Order Items Table
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS order_items (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id INT NOT NULL,
+  product_id INT NOT NULL,
+  product_name VARCHAR(255) NOT NULL,
+  quantity INT NOT NULL,
+  price DECIMAL(10, 2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  INDEX idx_order_id (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- Payments Table
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS payments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  order_id INT NOT NULL,
+  payment_method VARCHAR(50) DEFAULT 'stripe',
+  mtcn_no VARCHAR(100),
+  sender_name VARCHAR(255),
+  transaction_date DATE,
+  amount DECIMAL(10, 2) NOT NULL,
+  payment_proof_url TEXT,
+  payer_first_name VARCHAR(255),
+  payer_last_name VARCHAR(255),
+  payer_phone VARCHAR(50),
+  payer_address TEXT,
+  payer_city VARCHAR(100),
+  payer_country VARCHAR(100),
+  stripe_payment_intent_id VARCHAR(255),
+  stripe_checkout_session_id VARCHAR(255),
+  status VARCHAR(50) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  INDEX idx_order_id (order_id),
+  INDEX idx_mtcn_no (mtcn_no),
+  INDEX idx_status (status),
+  INDEX idx_payment_method (payment_method)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- Payment Settings Table
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS payment_settings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  wise_account_name VARCHAR(255) DEFAULT 'Zhong Jie Yong',
+  wise_account_number VARCHAR(100) DEFAULT '1101402249826',
+  wise_bank VARCHAR(255) DEFAULT 'Kasikorn Bank (K-Bank)',
+  wise_swift VARCHAR(50) DEFAULT 'KASITHBK',
+  western_union_name VARCHAR(255) DEFAULT 'Zhong Jie Yong',
+  western_union_account_number VARCHAR(100) DEFAULT '1101402249826',
+  western_union_phone VARCHAR(50) DEFAULT '098-887-0075',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
+-- User Sessions Table
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  session_token VARCHAR(255) UNIQUE NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_session_token (session_token),
+  INDEX idx_expires_at (expires_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================

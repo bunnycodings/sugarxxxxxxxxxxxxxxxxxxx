@@ -8,6 +8,7 @@ export interface Product {
   price: number
   category?: string
   image_url?: string
+  file_url?: string
   stock?: number
   is_active?: boolean
   created_at?: string
@@ -17,7 +18,7 @@ export interface Product {
 export async function getAllProducts() {
   try {
     const [rows] = await pool.execute(
-      'SELECT id, product_code, name, description, price, category, image_url, stock, is_active, created_at FROM products ORDER BY created_at DESC'
+      'SELECT id, product_code, name, description, price, category, image_url, file_url, stock, is_active, created_at FROM products ORDER BY created_at DESC'
     ) as any[]
     return rows
   } catch (error: any) {
@@ -110,6 +111,10 @@ export async function updateProduct(id: number, product: Partial<Product>) {
     if (product.image_url !== undefined) {
       updates.push('image_url = ?')
       values.push(product.image_url)
+    }
+    if (product.file_url !== undefined) {
+      updates.push('file_url = ?')
+      values.push(product.file_url)
     }
     if (product.stock !== undefined) {
       updates.push('stock = ?')

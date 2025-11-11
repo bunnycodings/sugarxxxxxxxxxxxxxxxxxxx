@@ -10,6 +10,15 @@ interface User {
   memberId?: string
 }
 
+interface OrderItem {
+  id: number
+  product_id: number
+  product_name: string
+  quantity: number
+  price: number
+  file_url?: string
+}
+
 interface Order {
   id: number
   customer_name: string
@@ -17,6 +26,7 @@ interface Order {
   total: number
   status: string
   created_at: string
+  items?: OrderItem[]
 }
 
 export default function Dashboard() {
@@ -328,31 +338,19 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Order ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Total</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {orders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                        #{order.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                        ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+              <div className="space-y-4">
+                {orders.map((order) => (
+                  <div key={order.id} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                    <div className="bg-gray-50 dark:bg-gray-700 px-6 py-4 flex justify-between items-center">
+                      <div className="flex items-center space-x-4">
+                        <div>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Order #{order.id}</span>
+                          <span className="ml-3 text-xs text-gray-500 dark:text-gray-400">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          order.status === 'completed' 
+                          order.status === 'completed' || order.status === 'paid'
                             ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                             : order.status === 'pending' || order.status === 'payment_pending'
                             ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
@@ -360,19 +358,60 @@ export default function Dashboard() {
                         }`}>
                           {order.status.replace('_', ' ').toUpperCase()}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      </div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                    <div className="px-6 py-4 bg-white dark:bg-gray-800">
+                      <div className="space-y-2">
+                        {order.items && order.items.length > 0 ? (
+                          order.items.map((item) => (
+                            <div key={item.id} className="flex justify-between items-center py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                  {item.product_name} × {item.quantity}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  ฿{(Number(item.price) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} each
+                                </div>
+                              </div>
+                              <div>
+                                {(order.status === 'paid' || order.status === 'completed') && item.file_url ? (
+                                  <a
+                                    href={`/api/download/product/${item.product_id}`}
+                                    download
+                                    className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-pink-500 to-blue-500 text-white text-xs rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-medium"
+                                  >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                    Download
+                                  </a>
+                                ) : (
+                                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                                    {item.file_url ? 'Payment pending' : 'No file available'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-sm text-gray-500 dark:text-gray-400">No items found</div>
+                        )}
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                         <Link
                           href={`/payment/${order.id}`}
-                          className="text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300 font-medium"
+                          className="text-sm text-pink-600 dark:text-pink-400 hover:text-pink-700 dark:hover:text-pink-300 font-medium"
                         >
-                          View Details
+                          View Order Details →
                         </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
