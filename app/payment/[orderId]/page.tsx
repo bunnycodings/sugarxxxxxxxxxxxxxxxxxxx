@@ -293,9 +293,16 @@ export default function PaymentPage() {
         <h1 className="text-4xl md:text-5xl font-display font-bold mb-2 bg-gradient-to-r from-pink-600 to-blue-600 dark:from-pink-400 dark:to-blue-400 bg-clip-text text-transparent">
           Payment Instructions
         </h1>
-        <p className="text-gray-600 dark:text-gray-300 mb-8">
+        <p className="text-gray-600 dark:text-gray-300 mb-4">
           Order #{orderId} - Total: ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
+        {(Number(order.total) || 0) === 0 && (
+          <div className="mb-8 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <p className="text-sm font-semibold text-green-800 dark:text-green-300">
+              🎉 This is a free product! You can proceed with Wise or Western Union for testing. Stripe cannot process 0 amount orders.
+            </p>
+          </div>
+        )}
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Payment Instructions */}
