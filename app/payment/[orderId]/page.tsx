@@ -632,8 +632,7 @@ export default function PaymentPage() {
                     {submitting ? 'Submitting...' : 'Submit Payment Details'}
                   </button>
                 </form>
-              </>
-            )}
+            </>
           </div>
         </div>
       </div>
