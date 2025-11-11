@@ -13,9 +13,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Items are required' }, { status: 400 })
     }
 
-    // Validate total - check for null, undefined, NaN, or <= 0
+    // Validate total - check for null, undefined, NaN, or < 0 (allow 0 for testing)
     const totalValue = typeof total === 'string' ? parseFloat(total) : Number(total)
-    if (!totalValue || isNaN(totalValue) || totalValue <= 0) {
+    if (totalValue === null || totalValue === undefined || isNaN(totalValue) || totalValue < 0) {
       console.error('Invalid total received:', { total, totalValue, type: typeof total })
       return NextResponse.json({ 
         error: 'Valid total is required. Please refresh the page and try again.' 

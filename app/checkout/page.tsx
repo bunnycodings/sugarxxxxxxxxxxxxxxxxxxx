@@ -66,7 +66,8 @@ export default function Checkout() {
     return items.reduce((sum, item) => {
       const price = Number(item.price) || 0
       const quantity = Number(item.quantity) || 0
-      if (isNaN(price) || isNaN(quantity) || price < 0 || quantity < 0) {
+      // Allow 0 prices for testing, but reject negative prices or invalid quantities
+      if (isNaN(price) || isNaN(quantity) || price < 0 || quantity <= 0) {
         console.warn('Invalid cart item:', item)
         return sum
       }
@@ -119,21 +120,22 @@ export default function Checkout() {
       return
     }
 
-    // Validate that all items have valid prices
+    // Validate that all items have valid prices (allow 0 for testing)
     const invalidItems = items.filter(item => {
       const price = Number(item.price)
       const quantity = Number(item.quantity)
-      return isNaN(price) || isNaN(quantity) || price <= 0 || quantity <= 0
+      // Allow price >= 0 (including 0 for testing), but quantity must be > 0
+      return isNaN(price) || isNaN(quantity) || price < 0 || quantity <= 0
     })
 
     if (invalidItems.length > 0) {
-      setError('Some items in your cart have invalid prices. Please refresh the page and try again.')
+      setError('Some items in your cart have invalid prices or quantities. Please refresh the page and try again.')
       return
     }
 
-    // Validate total
+    // Validate total (allow 0 for testing)
     const calculatedTotal = calculateDiscountedTotal()
-    if (!calculatedTotal || calculatedTotal <= 0 || isNaN(calculatedTotal)) {
+    if (calculatedTotal === undefined || calculatedTotal === null || isNaN(calculatedTotal) || calculatedTotal < 0) {
       console.error('Invalid total calculation:', { 
         originalTotal, 
         total, 

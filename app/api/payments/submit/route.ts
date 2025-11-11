@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
     const payer_city = formData.get('payer_city') as string
     const payer_country = formData.get('payer_country') as string
 
-    if (!orderId || !amount) {
-      return NextResponse.json({ error: 'Order ID and amount are required' }, { status: 400 })
+    if (!orderId || amount === null || amount === undefined || isNaN(amount) || amount < 0) {
+      return NextResponse.json({ error: 'Valid order ID and amount are required' }, { status: 400 })
     }
     
     // Validate based on payment method
