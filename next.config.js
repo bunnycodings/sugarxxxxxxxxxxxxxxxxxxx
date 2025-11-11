@@ -7,6 +7,11 @@ const nextConfig = {
       bodySizeLimit: '10mb',
     },
   },
+  // Suppress warnings about internal Next.js routes
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
   // Ensure build doesn't hang on database connections
   webpack: (config, { isServer }) => {
     if (isServer) {
