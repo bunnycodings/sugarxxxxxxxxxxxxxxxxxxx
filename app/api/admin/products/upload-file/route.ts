@@ -35,26 +35,14 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Validate file type - allow common file types
-    const allowedTypes = [
-      'application/zip',
-      'application/x-rar-compressed',
-      'application/x-7z-compressed',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain'
-    ]
-    
-    const allowedExtensions = ['.zip', '.rar', '.7z', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt']
+    // Validate file type - only ZIP and RAR allowed
+    const allowedExtensions = ['.zip', '.rar']
     const fileName = file.name.toLowerCase()
     const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext))
     
-    if (!hasValidExtension && !allowedTypes.includes(file.type)) {
+    if (!hasValidExtension) {
       return NextResponse.json({ 
-        error: 'Invalid file type. Allowed types: ZIP, RAR, 7Z, PDF, DOC, DOCX, XLS, XLSX, TXT' 
+        error: 'Invalid file type. Only ZIP and RAR files are accepted.' 
       }, { status: 400 })
     }
 

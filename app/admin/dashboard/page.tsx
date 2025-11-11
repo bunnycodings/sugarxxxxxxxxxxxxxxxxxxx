@@ -83,6 +83,9 @@ export default function AdminDashboard() {
   })
   const [uploadingFile, setUploadingFile] = useState<number | null>(null)
   const fileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({})
+  const [showFileUploadSection, setShowFileUploadSection] = useState(false)
+  const [selectedProductForUpload, setSelectedProductForUpload] = useState<string>('')
+  const [fileToUpload, setFileToUpload] = useState<File | null>(null)
   
   // Redeem Codes state
   const [redeemCodes, setRedeemCodes] = useState<RedeemCode[]>([])
@@ -509,6 +512,47 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleFileUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!selectedProductForUpload || !fileToUpload) {
+      alert('Please select a product and file')
+      return
+    }
+
+    setUploadingFile(parseInt(selectedProductForUpload))
+
+    try {
+      const formData = new FormData()
+      formData.append('file', fileToUpload)
+      formData.append('productId', selectedProductForUpload)
+
+      const response = await fetch('/api/admin/products/upload-file', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        alert(data.error || 'Failed to upload file')
+        return
+      }
+
+      // Refresh products list
+      fetchProducts()
+      alert('File uploaded successfully!')
+      
+      // Reset form
+      setSelectedProductForUpload('')
+      setFileToUpload(null)
+      setShowFileUploadSection(false)
+    } catch (err) {
+      alert('An error occurred while uploading the file')
+    } finally {
+      setUploadingFile(null)
+    }
+  }
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' })
     router.push('/admin/login')
@@ -671,6 +715,98 @@ export default function AdminDashboard() {
         {/* Products Tab */}
         {activeTab === 'products' && (
           <div className="space-y-6">
+            {/* File Upload Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-colors">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Upload Product File</h2>
+                <button
+                  onClick={() => {
+                    setShowFileUploadSection(!showFileUploadSection)
+                    if (!showFileUploadSection) {
+                      setSelectedProductForUpload('')
+                      setFileToUpload(null)
+                    }
+                  }}
+                  className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all font-medium"
+                >
+                  {showFileUploadSection ? '− Hide Upload' : '+ Upload File'}
+                </button>
+              </div>
+              {showFileUploadSection && (
+                <div className="p-6">
+                  <form onSubmit={handleFileUploadSubmit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Select Product *
+                      </label>
+                      <select
+                        required
+                        value={selectedProductForUpload}
+                        onChange={(e) => setSelectedProductForUpload(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      >
+                        <option value="">Choose an active product...</option>
+                        {products
+                          .filter((p) => p.is_active)
+                          .map((product) => (
+                            <option key={product.id} value={product.id}>
+                              {product.name} {product.product_code ? `(${product.product_code})` : `(ID: ${product.id})`}
+                              {product.file_url ? ' - [File exists]' : ''}
+                            </option>
+                          ))}
+                      </select>
+                      {products.filter((p) => p.is_active).length === 0 && (
+                        <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
+                          No active products available. Please create and activate a product first.
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Select File (ZIP or RAR) *
+                      </label>
+                      <input
+                        type="file"
+                        required
+                        accept=".zip,.rar"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            // Validate file type
+                            const fileName = file.name.toLowerCase()
+                            if (!fileName.endsWith('.zip') && !fileName.endsWith('.rar')) {
+                              alert('Please select a ZIP or RAR file only')
+                              e.target.value = ''
+                              return
+                            }
+                            setFileToUpload(file)
+                          }
+                        }}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 dark:file:bg-pink-900/30 dark:file:text-pink-300"
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        Only ZIP and RAR files are accepted. Maximum file size: 100MB
+                      </p>
+                      {fileToUpload && (
+                        <p className="mt-2 text-sm text-green-600 dark:text-green-400">
+                          Selected: {fileToUpload.name} ({(fileToUpload.size / 1024 / 1024).toFixed(2)} MB)
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={!selectedProductForUpload || !fileToUpload || uploadingFile !== null}
+                        className="px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {uploadingFile ? 'Uploading...' : 'Upload File'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
+
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-colors">
               <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                 <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Products ({products.length})</h2>
@@ -843,26 +979,9 @@ export default function AdminDashboard() {
                             >
                               Edit
                             </button>
-                            <input
-                              type="file"
-                              ref={(el) => {
-                                fileInputRefs.current[product.id] = el
-                              }}
-                              onChange={(e) => handleFileUpload(product.id, e)}
-                              className="hidden"
-                              accept=".zip,.rar,.7z,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                            />
-                            <button
-                              onClick={() => fileInputRefs.current[product.id]?.click()}
-                              disabled={uploadingFile === product.id}
-                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                              title={product.file_url ? 'Replace file' : 'Upload file'}
-                            >
-                              {uploadingFile === product.id ? 'Uploading...' : product.file_url ? 'Replace File' : 'Upload File'}
-                            </button>
                             {product.file_url && (
                               <span className="text-xs text-green-600 dark:text-green-400" title="File uploaded">
-                                ✓
+                                ✓ File
                               </span>
                             )}
                             <button
