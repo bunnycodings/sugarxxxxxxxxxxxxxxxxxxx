@@ -15,6 +15,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
+    // Handle 0 amount orders - Stripe doesn't allow 0 amount payments
+    if (order.total === 0 || order.total <= 0) {
+      return NextResponse.json({ 
+        error: 'Stripe cannot process orders with 0 amount. Please use Wise or Western Union for free products, or contact support.' 
+      }, { status: 400 })
+    }
+
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY
     if (!stripeSecretKey) {
       return NextResponse.json(
