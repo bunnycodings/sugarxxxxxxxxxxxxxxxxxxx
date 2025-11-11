@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       customer_phone: customer.phone || null,
       total: totalValue, // Use the validated totalValue
       status: 'pending',
-      payment_method: payment_method || 'stripe',
+      payment_method: payment_method || 'wise',
       items: items
     })
 

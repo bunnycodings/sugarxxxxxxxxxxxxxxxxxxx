@@ -411,7 +411,7 @@ export async function initializeDatabase() {
     
     // Add payment_method column to existing orders table if it doesn't exist
     try {
-      await pool.execute('ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) DEFAULT "stripe"')
+      await pool.execute('ALTER TABLE orders ADD COLUMN payment_method VARCHAR(50) DEFAULT "wise"')
     } catch (e: any) {
       // Column might already exist
       if (!e.message?.includes('Duplicate column name')) {
