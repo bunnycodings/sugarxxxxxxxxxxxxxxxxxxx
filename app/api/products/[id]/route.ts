@@ -22,7 +22,14 @@ export async function GET(
       return NextResponse.json({ error: 'Product not available' }, { status: 404 })
     }
 
-    return NextResponse.json({ product }, { status: 200 })
+    // Ensure price is a number
+    const normalizedProduct = {
+      ...product,
+      price: parseFloat(product.price) || 0,
+      stock: parseInt(product.stock) || 0
+    }
+
+    return NextResponse.json({ product: normalizedProduct }, { status: 200 })
   } catch (error: any) {
     console.error('Get product error:', error)
     
