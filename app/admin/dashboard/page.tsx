@@ -962,7 +962,7 @@ export default function AdminDashboard() {
                           ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                          <span className="capitalize">{order.payment_method || 'stripe'}</span>
+                          <span className="capitalize">{order.payment_method || 'wise'}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm">
                           <span className={`px-2 py-1 rounded-full text-xs ${
@@ -1064,7 +1064,7 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Payment Method</p>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 capitalize">{selectedOrder.payment_method || 'stripe'}</p>
+                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 capitalize">{selectedOrder.payment_method || 'wise'}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">Total Amount</p>
