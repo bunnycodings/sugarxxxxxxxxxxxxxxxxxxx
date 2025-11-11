@@ -27,11 +27,15 @@ export default function VirtualAirlines() {
     try {
       setLoading(true)
       const response = await fetch('/api/products/category?category=Virtual Airlines', {
-        next: { revalidate: 60 } // Revalidate every 60 seconds
+        cache: 'no-store'
       })
+      if (!response.ok) {
+        throw new Error('Failed to fetch products')
+      }
       const data = await response.json()
       setProducts(data.products || [])
     } catch (err) {
+      console.error('Error fetching products:', err)
       setProducts([])
     } finally {
       setLoading(false)
