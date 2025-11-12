@@ -32,7 +32,7 @@ async function getBlockedCountries(): Promise<string[]> {
       const data = await response.json()
       blockedCountriesCache = data.countries || []
       cacheTimestamp = now
-      return blockedCountriesCache
+      return blockedCountriesCache || []
     }
   } catch (error) {
     console.error('Error fetching blocked countries in middleware:', error)

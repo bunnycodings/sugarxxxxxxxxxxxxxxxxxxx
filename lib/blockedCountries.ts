@@ -384,7 +384,7 @@ export async function addBlockedCountry(
   const pool = db
   const countryName = getCountryName(countryCode)
   
-  const [result] = await pool.query<{ insertId: number }>(
+  await pool.query(
     'INSERT INTO blocked_countries (country_code, country_name, expires_at) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE country_name = ?, expires_at = ?',
     [
       countryCode.toUpperCase(), 
@@ -449,12 +449,12 @@ export async function updateBlockedCountryExpiration(
 
 export async function removeBlockedCountry(countryCode: string): Promise<boolean> {
   const pool = db
-  const [result] = await pool.query<{ affectedRows: number }>(
+  const [result] = await pool.query(
     'DELETE FROM blocked_countries WHERE country_code = ?',
     [countryCode.toUpperCase()]
   )
   
-  return result.affectedRows > 0
+  return (result as any).affectedRows > 0
 }
 
 export async function removeBlockedCountries(countryCodes: string[]): Promise<number> {
@@ -462,12 +462,12 @@ export async function removeBlockedCountries(countryCodes: string[]): Promise<nu
   if (countryCodes.length === 0) return 0
   
   const placeholders = countryCodes.map(() => '?').join(',')
-  const [result] = await pool.query<{ affectedRows: number }>(
+  const [result] = await pool.query(
     `DELETE FROM blocked_countries WHERE country_code IN (${placeholders})`,
     countryCodes.map(c => c.toUpperCase())
   )
   
-  return result.affectedRows
+  return (result as any).affectedRows
 }
 
 export async function setBlockedCountries(
@@ -505,20 +505,20 @@ export async function setBlockedCountries(
 
 export async function isCountryBlocked(countryCode: string): Promise<boolean> {
   const pool = db
-  const [rows] = await pool.query<{ count: number }[]>(
+  const [rows] = await pool.query(
     'SELECT COUNT(*) as count FROM blocked_countries WHERE country_code = ? AND (expires_at IS NULL OR expires_at > NOW())',
     [countryCode.toUpperCase()]
   )
   
-  return rows[0].count > 0
+  return (rows as { count: number }[])[0].count > 0
 }
 
 // Clean up expired entries (optional, can be run periodically)
 export async function cleanupExpiredBlocks(): Promise<number> {
   const pool = db
-  const [result] = await pool.query<{ affectedRows: number }>(
+  const [result] = await pool.query(
     'DELETE FROM blocked_countries WHERE expires_at IS NOT NULL AND expires_at <= NOW()'
   )
   
-  return result.affectedRows
+  return (result as any).affectedRows
 }
