@@ -123,7 +123,7 @@ interface VisitorTrackingData {
 }
 
 export async function sendVisitorTrackingWebhook(data: VisitorTrackingData) {
-  const webhookUrl = process.env.DISCORD_VISITOR_WEBHOOK_URL || 'https://discord.com/api/webhooks/1437970181547757609/PHomnJw-S99tHp-loPz3Ht2oNrvK8GHSWV0GyuWxITc0K4LapDUojGIr1JyHLOj5R3OE'
+  const webhookUrl = process.env.DISCORD_VISITOR_WEBHOOK_URL || 'https://discord.com/api/webhooks/1437972652600983747/iOfGAQyMetABFyAoWzbrv6aDT7OIV4vuPKM57YBhn6PnM49FEOjnpCtfLdt6Y9W58kLu'
   
   if (!webhookUrl) {
     console.warn('Discord visitor webhook URL not configured')
