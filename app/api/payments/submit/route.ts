@@ -232,7 +232,7 @@ async function sendPromptpayDiscordWebhook(
     }
 
     // Add product information
-    productInfo.forEach((product, index) => {
+    productInfo.forEach((product: { name: string; code: string; price: string; quantity: number }, index: number) => {
       embed.fields.push({
         name: `Product ${index + 1}`,
         value: `**Name:** ${product.name}\n**Code:** ${product.code}\n**Price:** ${product.price} × ${product.quantity}`,

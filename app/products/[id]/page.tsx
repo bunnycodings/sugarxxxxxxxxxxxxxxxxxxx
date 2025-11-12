@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
 
 interface Product {
@@ -115,19 +116,22 @@ export default function ProductDetail() {
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
           <div className="md:flex md:flex-col">
-            <div className="w-full">
+            <div className="w-full relative aspect-video max-h-[600px] bg-gradient-to-br from-pink-200 to-blue-200 dark:from-pink-800 dark:to-blue-800">
               {product.image_url ? (
-                <img
+                <Image
                   src={product.image_url}
                   alt={product.name}
-                  className="w-full h-auto max-h-[600px] object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="100vw"
+                  priority
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
                     target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600"%3E%3Crect fill="%23ddd" width="800" height="600"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em" font-size="24"%3ENo Image Available%3C/text%3E%3C/svg%3E'
                   }}
                 />
               ) : (
-                <div className="w-full h-96 bg-gradient-to-br from-pink-200 to-blue-200 dark:from-pink-800 dark:to-blue-800 flex items-center justify-center">
+                <div className="w-full h-full flex items-center justify-center">
                   <svg className="w-24 h-24 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>

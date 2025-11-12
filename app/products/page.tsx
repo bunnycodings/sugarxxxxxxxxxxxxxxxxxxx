@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface Product {
   id: number
@@ -100,10 +101,13 @@ export default function Products() {
                       <td className="px-6 py-4">
                         {product.image_url ? (
                           <div className="w-20 h-20 relative rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
-                            <img
+                            <Image
                               src={product.image_url}
                               alt={product.name}
-                              className="w-full h-full object-cover"
+                              fill
+                              className="object-cover"
+                              sizes="80px"
+                              loading="lazy"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
                                 target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em" font-size="14"%3ENo Image%3C/text%3E%3C/svg%3E'

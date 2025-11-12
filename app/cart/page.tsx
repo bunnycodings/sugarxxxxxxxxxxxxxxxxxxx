@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
 
 export default function Cart() {
@@ -97,11 +98,14 @@ export default function Cart() {
                 >
                   <div className="flex gap-4">
                     {item.image_url ? (
-                      <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
-                        <img
+                      <div className="w-24 h-24 relative rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                        <Image
                           src={item.image_url}
                           alt={item.name}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover"
+                          sizes="96px"
+                          loading="lazy"
                         />
                       </div>
                     ) : (

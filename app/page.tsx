@@ -1,3 +1,17 @@
+import type { Metadata } from 'next'
+import Link from 'next/link'
+
+export const metadata: Metadata = {
+  title: 'Welcome to Sugarbunny Stores | Premium Virtual Products & Services',
+  description: 'Your premier destination for virtual products and services. Explore virtual airlines, bots, and website development services.',
+  keywords: ['virtual products', 'virtual airlines', 'bots', 'website development', 'online store'],
+  openGraph: {
+    title: 'Sugarbunny Stores - Premium Virtual Products & Services',
+    description: 'Your premier destination for virtual products and services',
+    type: 'website',
+  },
+}
+
 export default function Home() {
   return (
     <>
@@ -11,12 +25,12 @@ export default function Home() {
             Your premier destination for virtual products and services
           </p>
           <div className="flex justify-center mb-8">
-            <a 
+            <Link 
               href="/products" 
               className="px-8 py-3 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-semibold shadow-lg"
             >
               Explore Products
-            </a>
+            </Link>
           </div>
 
           {/* Announcement Banner */}
@@ -123,12 +137,12 @@ export default function Home() {
           <p className="text-white/90 mb-8 max-w-2xl mx-auto">
             Join thousands of satisfied customers and discover our premium products today
           </p>
-          <a 
+          <Link 
             href="/register" 
             className="inline-block px-8 py-3 bg-white text-pink-600 rounded-lg hover:bg-gray-100 transition-all font-semibold shadow-lg"
           >
             Create Account
-          </a>
+          </Link>
         </div>
       </section>
     </>

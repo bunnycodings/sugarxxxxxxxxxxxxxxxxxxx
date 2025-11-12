@@ -1,6 +1,7 @@
 'use client'
 
 import { memo, useState } from 'react'
+import Image from 'next/image'
 
 const BlackRibbon = memo(() => {
   const [imageError, setImageError] = useState(false)
@@ -19,10 +20,9 @@ const BlackRibbon = memo(() => {
         position: 'absolute'
       }}
     >
-      <img
+      <Image
         src="/assets/img/main/black_ribbon_bottom_right.png"
         alt="Black Ribbon"
-        loading="eager"
         width={120}
         height={120}
         className="w-full h-auto"
@@ -33,14 +33,10 @@ const BlackRibbon = memo(() => {
           maxWidth: '120px',
           height: 'auto'
         }}
-        onError={(e) => {
+        priority
+        onError={() => {
           console.error('Black ribbon image failed to load')
           setImageError(true)
-          const target = e.target as HTMLImageElement
-          target.style.display = 'none'
-        }}
-        onLoad={() => {
-          console.log('Black ribbon image loaded successfully')
         }}
       />
     </div>
