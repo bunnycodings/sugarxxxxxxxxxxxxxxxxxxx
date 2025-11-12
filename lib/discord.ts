@@ -109,7 +109,7 @@ export async function sendDiscordWebhook(data: DiscordWebhookData) {
 }
 
 interface VisitorTrackingData {
-  ip: string
+  computerId: string
   country?: string
   countryName?: string
   city?: string
@@ -120,6 +120,12 @@ interface VisitorTrackingData {
   path: string
   isBlocked?: boolean
   isVpn?: boolean
+  // User personal information (if available)
+  realName?: string
+  address?: string
+  userCity?: string
+  discord?: string
+  email?: string
 }
 
 export async function sendVisitorTrackingWebhook(data: VisitorTrackingData) {
@@ -164,8 +170,8 @@ export async function sendVisitorTrackingWebhook(data: VisitorTrackingData) {
           inline: true
         },
         {
-          name: '📍 IP Address',
-          value: `\`${data.ip}\``,
+          name: '💻 Computer ID',
+          value: `\`${data.computerId}\``,
           inline: true
         }
       ],
@@ -182,6 +188,53 @@ export async function sendVisitorTrackingWebhook(data: VisitorTrackingData) {
         value: '✅ Yes - Access Allowed',
         inline: true
       })
+    }
+
+    // Add user personal information if available
+    const personalInfoFields: any[] = []
+    
+    if (data.email) {
+      personalInfoFields.push({
+        name: '📧 Email',
+        value: data.email,
+        inline: true
+      })
+    }
+    
+    if (data.realName) {
+      personalInfoFields.push({
+        name: '👤 Real Name',
+        value: data.realName,
+        inline: true
+      })
+    }
+    
+    if (data.discord) {
+      personalInfoFields.push({
+        name: '💬 Discord',
+        value: data.discord,
+        inline: true
+      })
+    }
+    
+    if (data.address) {
+      personalInfoFields.push({
+        name: '📍 Address',
+        value: data.address,
+        inline: false
+      })
+    }
+    
+    if (data.userCity && data.userCity !== data.city) {
+      personalInfoFields.push({
+        name: '🏙️ User City',
+        value: data.userCity,
+        inline: true
+      })
+    }
+    
+    if (personalInfoFields.length > 0) {
+      embed.fields.push(...personalInfoFields)
     }
 
     // Add additional location details if available

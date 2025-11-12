@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { sendVisitorTrackingWebhook } from '@/lib/discord'
+import { cookies } from 'next/headers'
+import pool from '@/lib/db'
 
 // Cache for blocked countries (in-memory, resets on server restart)
 // This cache is shared across all middleware executions
@@ -8,8 +10,8 @@ let blockedCountriesCache: string[] | null = null
 let cacheTimestamp: number = 0
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-// Track which IPs have already been tracked to prevent duplicates
-const trackedIPs = new Set<string>()
+// Track which computer IDs have already been tracked to prevent duplicates
+const trackedComputerIds = new Set<string>()
 
 async function getBlockedCountries(): Promise<string[]> {
   const now = Date.now()
@@ -158,8 +160,95 @@ async function getLocationDetails(ip: string): Promise<{
   return null
 }
 
+function generateComputerId(): string {
+  // Generate a unique computer ID using crypto
+  return crypto.randomUUID()
+}
+
+async function getUserPersonalInfo(userId: number): Promise<{
+  email?: string
+  realName?: string
+  address?: string
+  userCity?: string
+  discord?: string
+} | null> {
+  try {
+    // Get user email
+    const [userRows] = await pool.execute(
+      'SELECT email FROM users WHERE id = ?',
+      [userId]
+    ) as any[]
+    
+    if (userRows.length === 0) {
+      return null
+    }
+    
+    const email = userRows[0].email
+    
+    // Get latest order to extract customer name
+    const [orderRows] = await pool.execute(
+      'SELECT customer_name FROM orders WHERE customer_email = ? ORDER BY created_at DESC LIMIT 1',
+      [email]
+    ) as any[]
+    
+    // Get latest payment to extract address, city, name
+    const [paymentRows] = await pool.execute(
+      `SELECT payer_first_name, payer_last_name, payer_address, payer_city 
+       FROM payments 
+       WHERE order_id IN (SELECT id FROM orders WHERE customer_email = ?) 
+       ORDER BY created_at DESC LIMIT 1`,
+      [email]
+    ) as any[]
+    
+    const result: {
+      email?: string
+      realName?: string
+      address?: string
+      userCity?: string
+      discord?: string
+    } = {
+      email
+    }
+    
+    // Get name from order or payment
+    if (orderRows.length > 0 && orderRows[0].customer_name) {
+      result.realName = orderRows[0].customer_name
+    } else if (paymentRows.length > 0) {
+      const firstName = paymentRows[0].payer_first_name || ''
+      const lastName = paymentRows[0].payer_last_name || ''
+      if (firstName || lastName) {
+        result.realName = `${firstName} ${lastName}`.trim()
+      }
+    }
+    
+    // Get address and city from payment
+    if (paymentRows.length > 0) {
+      if (paymentRows[0].payer_address) {
+        result.address = paymentRows[0].payer_address
+      }
+      if (paymentRows[0].payer_city) {
+        result.userCity = paymentRows[0].payer_city
+      }
+    }
+    
+    // Note: Discord would need to be added to users table or collected separately
+    // For now, we'll leave it empty but the interface supports it
+    
+    return result
+  } catch (error) {
+    console.error('Error fetching user personal info:', error)
+    return null
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
+  
+  // Get or create computer ID
+  let computerId = request.cookies.get('computer_id')?.value
+  if (!computerId) {
+    computerId = generateComputerId()
+  }
   
   // Check if user has visited main page (required before accessing other pages)
   const hasVisitedMainPage = request.cookies.get('visited_main_page')?.value === 'true'
@@ -263,19 +352,39 @@ export async function middleware(request: NextRequest) {
   const isVercelRequest = isVercelInternalRequest(request)
   const shouldTrack = isMainPage && !isVercelRequest
   
-  // Check if this IP has already been tracked (prevent duplicates)
-  const hasBeenTracked = trackedIPs.has(ip)
+  // Check if this computer ID has already been tracked (prevent duplicates)
+  const hasBeenTracked = trackedComputerIds.has(computerId)
   
-  if (shouldTrack && !hasBeenTracked && ip !== 'unknown') {
-    // Mark this IP as tracked
-    trackedIPs.add(ip)
+  if (shouldTrack && !hasBeenTracked) {
+    // Mark this computer ID as tracked
+    trackedComputerIds.add(computerId)
     
-    // Limit the Set size to prevent memory issues (keep last 1000 IPs)
-    if (trackedIPs.size > 1000) {
-      const firstIP = trackedIPs.values().next().value
-      if (firstIP) {
-        trackedIPs.delete(firstIP)
+    // Limit the Set size to prevent memory issues (keep last 1000 computer IDs)
+    if (trackedComputerIds.size > 1000) {
+      const firstId = trackedComputerIds.values().next().value
+      if (firstId) {
+        trackedComputerIds.delete(firstId)
       }
+    }
+    
+    // Get user personal information if logged in
+    let userInfo: { email?: string; realName?: string; address?: string; userCity?: string; discord?: string } | null = null
+    try {
+      const cookieStore = await cookies()
+      const userSession = cookieStore.get('user_session')
+      if (userSession) {
+        try {
+          const sessionData = JSON.parse(userSession.value)
+          if (sessionData.userId) {
+            userInfo = await getUserPersonalInfo(sessionData.userId)
+          }
+        } catch (e) {
+          // Invalid session data, ignore
+        }
+      }
+    } catch (error) {
+      // Failed to get user info, continue without it
+      console.error('Error getting user session:', error)
     }
     
     // Track visitor asynchronously (don't block the request)
@@ -283,7 +392,7 @@ export async function middleware(request: NextRequest) {
     if (locationData) {
       // We already have location data, send it immediately
       sendVisitorTrackingWebhook({
-        ip,
+        computerId,
         country: detectedCountry || locationData.country,
         countryName: locationData.countryName,
         city: locationData.city,
@@ -293,15 +402,16 @@ export async function middleware(request: NextRequest) {
         userAgent: request.headers.get('user-agent') || undefined,
         path,
         isBlocked,
-        isVpn: locationData.isVpn
+        isVpn: locationData.isVpn,
+        ...(userInfo || {})
       }).catch(err => {
         console.error('Failed to send visitor tracking:', err)
       })
     } else {
-      // Fetch location details if we don't have them yet
+      // Fetch location details if we don't have them yet (still get location info)
       getLocationDetails(ip).then(locData => {
         sendVisitorTrackingWebhook({
-          ip,
+          computerId,
           country: detectedCountry || locData?.country,
           countryName: locData?.countryName,
           city: locData?.city,
@@ -311,19 +421,21 @@ export async function middleware(request: NextRequest) {
           userAgent: request.headers.get('user-agent') || undefined,
           path,
           isBlocked,
-          isVpn: locData?.isVpn || false
+          isVpn: locData?.isVpn || false,
+          ...(userInfo || {})
         }).catch(err => {
           console.error('Failed to send visitor tracking:', err)
         })
       }).catch(err => {
         // If location fetch fails, still send basic tracking
         sendVisitorTrackingWebhook({
-          ip,
+          computerId,
           country: detectedCountry,
           userAgent: request.headers.get('user-agent') || undefined,
           path,
           isBlocked,
-          isVpn: false
+          isVpn: false,
+          ...(userInfo || {})
         }).catch(err => {
           console.error('Failed to send visitor tracking:', err)
         })
@@ -336,8 +448,20 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/blocked', request.url))
   }
   
-  // Set cookie when user visits main page (if not already set)
+  // Set cookies when user visits main page
   const response = NextResponse.next()
+  
+  // Set computer ID cookie (persistent, 1 year)
+  if (!request.cookies.get('computer_id')) {
+    response.cookies.set('computer_id', computerId, {
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    })
+  }
+  
+  // Set visited main page cookie
   if (path === '/' && !hasVisitedMainPage) {
     response.cookies.set('visited_main_page', 'true', {
       maxAge: 60 * 60 * 24, // 24 hours
