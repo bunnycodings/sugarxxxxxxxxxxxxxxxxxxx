@@ -6,7 +6,17 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
+    let cookieStore
+    try {
+      cookieStore = await cookies()
+    } catch (cookieError: any) {
+      console.error('Cookies error:', cookieError)
+      return NextResponse.json(
+        { error: 'Failed to access cookies', details: process.env.NODE_ENV === 'development' ? cookieError.message : undefined },
+        { status: 500 }
+      )
+    }
+    
     const sessionToken = cookieStore.get('admin_session')?.value
 
     if (!sessionToken) {
@@ -32,7 +42,17 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
+    let cookieStore
+    try {
+      cookieStore = await cookies()
+    } catch (cookieError: any) {
+      console.error('Cookies error:', cookieError)
+      return NextResponse.json(
+        { error: 'Failed to access cookies', details: process.env.NODE_ENV === 'development' ? cookieError.message : undefined },
+        { status: 500 }
+      )
+    }
+    
     const sessionToken = cookieStore.get('admin_session')?.value
 
     if (!sessionToken) {
@@ -66,7 +86,17 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
+    let cookieStore
+    try {
+      cookieStore = await cookies()
+    } catch (cookieError: any) {
+      console.error('Cookies error:', cookieError)
+      return NextResponse.json(
+        { error: 'Failed to access cookies', details: process.env.NODE_ENV === 'development' ? cookieError.message : undefined },
+        { status: 500 }
+      )
+    }
+    
     const sessionToken = cookieStore.get('admin_session')?.value
 
     if (!sessionToken) {
