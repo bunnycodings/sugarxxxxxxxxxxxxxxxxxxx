@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface Order {
   id: number
@@ -388,15 +389,18 @@ export default function PaymentPage() {
                       Scan this QR Code:
                     </h3>
                     <div className="flex justify-center mb-4">
-                      <img
-                        src="/assets/img/payments/qr.jpg"
-                        alt="Promptpay QR Code"
-                        className="max-w-xs w-full h-auto rounded-lg border-2 border-gray-300 dark:border-gray-600"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23ddd" width="400" height="400"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em" font-size="16"%3EQR Code Not Found%3C/text%3E%3C/svg%3E'
-                        }}
-                      />
+                      <div className="relative max-w-xs w-full aspect-square">
+                        <Image
+                          src="/assets/img/payments/qr.jpg"
+                          alt="Promptpay QR Code"
+                          width={400}
+                          height={400}
+                          className="rounded-lg border-2 border-gray-300 dark:border-gray-600 object-contain"
+                          onError={() => {
+                            console.error('Failed to load QR image')
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">

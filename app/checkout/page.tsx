@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
 
 export default function Checkout() {
@@ -319,6 +320,30 @@ export default function Checkout() {
                     </button>
                   </div>
                 </div>
+                {paymentMethod === 'promptpay' && (
+                  <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 text-center">
+                      Scan QR Code to Pay
+                    </h3>
+                    <div className="flex justify-center mb-3">
+                      <div className="relative max-w-xs w-full aspect-square">
+                        <Image
+                          src="/assets/img/payments/qr.jpg"
+                          alt="Promptpay QR Code"
+                          width={400}
+                          height={400}
+                          className="rounded-lg border-2 border-gray-300 dark:border-gray-600 object-contain"
+                          onError={(e) => {
+                            console.error('Failed to load QR image')
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+                      Scan this QR code with your mobile banking app to complete payment
+                    </p>
+                  </div>
+                )}
                 <div>
                   <label htmlFor="redeemCode" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Redeem Code
