@@ -118,7 +118,7 @@ export default function PaymentPage() {
         return
       }
     } else if (paymentMethod === 'promptpay') {
-      if (!paymentData.transaction_id || !paymentData.payer_name || !paymentData.amount || !paymentData.transaction_datetime || !receiptFile) {
+      if (!paymentData.transaction_id || !paymentData.amount || !paymentData.transaction_datetime || !receiptFile) {
         setError('Please fill in all required fields and upload receipt')
         return
       }
@@ -144,7 +144,6 @@ export default function PaymentPage() {
         formData.append('payer_city', paymentData.payer_city)
         formData.append('payer_country', paymentData.payer_country)
       } else if (paymentMethod === 'promptpay') {
-        formData.append('payer_name', paymentData.payer_name)
         formData.append('transaction_datetime', paymentData.transaction_datetime)
         if (receiptFile) {
           formData.append('receipt', receiptFile)
@@ -456,35 +455,6 @@ export default function PaymentPage() {
                         />
                       </div>
                       <div>
-                        <label htmlFor="payer_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Payer Name *
-                        </label>
-                        <input
-                          type="text"
-                          id="payer_name"
-                          required
-                          value={paymentData.payer_name}
-                          onChange={(e) => setPaymentData({ ...paymentData, payer_name: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                          placeholder="Enter payer's full name"
-                        />
-                      </div>
-                      <div>
-                        <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Amount (THB) *
-                        </label>
-                        <input
-                          type="number"
-                          id="amount"
-                          step="0.01"
-                          required
-                          value={paymentData.amount}
-                          onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                          placeholder="Enter amount sent"
-                        />
-                      </div>
-                      <div>
                         <label htmlFor="transaction_datetime" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Transaction Date and Time *
                         </label>
@@ -495,6 +465,21 @@ export default function PaymentPage() {
                           value={paymentData.transaction_datetime}
                           onChange={(e) => setPaymentData({ ...paymentData, transaction_datetime: e.target.value })}
                           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Transaction Amount (THB) *
+                        </label>
+                        <input
+                          type="number"
+                          id="amount"
+                          step="0.01"
+                          required
+                          value={paymentData.amount}
+                          onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          placeholder="Enter transaction amount"
                         />
                       </div>
                       <div>
