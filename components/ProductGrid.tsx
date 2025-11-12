@@ -141,9 +141,14 @@ export default function ProductGrid({ products }: ProductGridProps) {
             </p>
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-2xl font-bold text-pink-600 dark:text-pink-400">
-                  ฿{(Number(product.price) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-pink-600 dark:text-pink-400">
+                    ฿{((Number(product.price) || 0) * 1.07).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    (incl. VAT)
+                  </span>
+                </div>
                 {product.stock > 0 && (
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {product.stock} available

@@ -144,9 +144,17 @@ export default function ProductDetail() {
                 {product.name}
               </h1>
               <div className="mb-6">
-                <span className="text-5xl font-bold text-pink-600 dark:text-pink-400">
-                  ฿{(Number(product.price) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-5xl font-bold text-pink-600 dark:text-pink-400">
+                    ฿{((Number(product.price) || 0) * 1.07).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    (incl. 7% VAT)
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Base price: ฿{(Number(product.price) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (excl. VAT)
+                </p>
               </div>
               {product.description && (
                 <div className="mb-6">
