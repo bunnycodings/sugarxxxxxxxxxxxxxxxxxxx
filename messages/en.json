@@ -1,0 +1,66 @@
+{
+  "common": {
+    "home": "Home",
+    "products": "Products",
+    "cart": "Cart",
+    "checkout": "Checkout",
+    "login": "Login",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "logout": "Logout",
+    "search": "Search",
+    "addToCart": "Add to Cart",
+    "viewDetails": "View Details",
+    "price": "Price",
+    "stock": "Stock",
+    "inStock": "In Stock",
+    "outOfStock": "Out of Stock",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous"
+  },
+  "product": {
+    "addedToCart": "Product added to cart!",
+    "outOfStock": "This product is out of stock and cannot be purchased.",
+    "loginToBuy": "Login to Buy",
+    "description": "Description",
+    "category": "Category",
+    "available": "available",
+    "unavailable": "Unavailable"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "customerInfo": "Customer Information",
+    "paymentMethod": "Payment Method",
+    "orderSummary": "Order Summary",
+    "subtotal": "Subtotal",
+    "vat": "VAT",
+    "total": "Total",
+    "proceedToPayment": "Proceed to Payment",
+    "emptyCart": "Your cart is empty. Please add items before checkout."
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "continueShopping": "Continue Shopping",
+    "checkout": "Checkout"
+  },
+  "home": {
+    "title": "Welcome to Sugarbunny Stores",
+    "description": "Your premier destination for virtual products and services",
+    "exploreProducts": "Explore Products",
+    "createAccount": "Create Account",
+    "whatWeOffer": "What We Offer",
+    "readyToGetStarted": "Ready to Get Started?"
+  }
+}
+
