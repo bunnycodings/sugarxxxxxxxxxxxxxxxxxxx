@@ -89,3 +89,37 @@ export async function deleteReview(id: number) {
   }
 }
 
+export async function getApprovedReviews() {
+  try {
+    const [rows] = await pool.execute(
+      `SELECT r.*, p.name as product_name, u.email as user_email 
+       FROM reviews r 
+       LEFT JOIN products p ON r.product_id = p.id 
+       LEFT JOIN users u ON r.user_id = u.id 
+       WHERE r.is_approved = TRUE
+       ORDER BY r.created_at DESC`
+    ) as any[]
+    return rows
+  } catch (error: any) {
+    if (error.code === 'ER_NO_SUCH_TABLE' || error.message?.includes("doesn't exist")) {
+      return []
+    }
+    throw error
+  }
+}
+
+export async function getUserReviewForProduct(userId: number, productId: number) {
+  try {
+    const [rows] = await pool.execute(
+      'SELECT * FROM reviews WHERE user_id = ? AND product_id = ?',
+      [userId, productId]
+    ) as any[]
+    return rows[0] || null
+  } catch (error: any) {
+    if (error.code === 'ER_NO_SUCH_TABLE' || error.message?.includes("doesn't exist")) {
+      return null
+    }
+    throw error
+  }
+}
+
