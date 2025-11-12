@@ -354,18 +354,18 @@ export function getCountryName(countryCode: string): string {
 
 export async function getAllBlockedCountries(): Promise<BlockedCountry[]> {
   const pool = db
-  const [rows] = await pool.query<BlockedCountry[]>(
+  const [rows] = await pool.query(
     'SELECT * FROM blocked_countries WHERE expires_at IS NULL OR expires_at > NOW() ORDER BY country_name ASC'
   )
-  return rows
+  return rows as BlockedCountry[]
 }
 
 export async function getAllBlockedCountriesIncludingExpired(): Promise<BlockedCountry[]> {
   const pool = db
-  const [rows] = await pool.query<BlockedCountry[]>(
+  const [rows] = await pool.query(
     'SELECT * FROM blocked_countries ORDER BY country_name ASC'
   )
-  return rows
+  return rows as BlockedCountry[]
 }
 
 export async function getBlockedCountryCodes(): Promise<string[]> {
