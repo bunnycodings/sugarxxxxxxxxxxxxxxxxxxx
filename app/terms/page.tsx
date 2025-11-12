@@ -69,7 +69,29 @@ export default function TermsOfService() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-display font-bold text-gray-800 dark:text-gray-200 mb-4">
-                5. Payment Terms
+                5. File Delivery and Sharing
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+                For products that include downloadable files or digital content:
+              </p>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 mb-4 space-y-2 ml-4">
+                <li>Files are delivered after payment verification is completed</li>
+                <li>To receive your purchased files, you must open a support ticket in our Discord server</li>
+                <li>When opening a ticket, provide your Order ID and payment receipt (image or PDF format)</li>
+                <li>Our team will verify your payment and provide access to your files</li>
+                <li>File delivery may take up to 24-48 hours after payment verification</li>
+                <li>You are responsible for maintaining the security and confidentiality of files you receive</li>
+                <li>Sharing, redistributing, or reselling purchased files is strictly prohibited</li>
+                <li>Files are provided for personal use only unless otherwise specified in the product description</li>
+              </ul>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+                <strong>Important:</strong> Failure to provide accurate order information or payment proof may delay or prevent file delivery. We are not responsible for files lost due to user error or failure to follow delivery instructions.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-display font-bold text-gray-800 dark:text-gray-200 mb-4">
+                6. Payment Terms
               </h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
                 By making a purchase, you agree to:
@@ -87,7 +109,7 @@ export default function TermsOfService() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-display font-bold text-gray-800 dark:text-gray-200 mb-4">
-                6. Refund Policy
+                7. Refund Policy
               </h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
                 Due to the digital nature of our products and services:
@@ -100,7 +122,7 @@ export default function TermsOfService() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-display font-bold text-gray-800 dark:text-gray-200 mb-4">
-                7. Intellectual Property
+                8. Intellectual Property
               </h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
                 All content on this website, including products, services, text, graphics, logos, and software, is the property of Sugarbunny Stores and is protected by copyright and other intellectual property laws. You may not:
@@ -115,7 +137,7 @@ export default function TermsOfService() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-display font-bold text-gray-800 dark:text-gray-200 mb-4">
-                8. Prohibited Uses
+                9. Prohibited Uses
               </h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
                 You agree not to use our service to:
@@ -132,7 +154,28 @@ export default function TermsOfService() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-display font-bold text-gray-800 dark:text-gray-200 mb-4">
-                9. Limitation of Liability
+                10. Geographic Restrictions and IP Blocking
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+                We reserve the right to restrict access to our website and services based on geographic location:
+              </p>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-300 mb-4 space-y-2 ml-4">
+                <li>We may block access from certain countries or regions at our discretion</li>
+                <li>IP blocking may be implemented temporarily or permanently</li>
+                <li>Blocked countries are determined by our administrative team and may change without prior notice</li>
+                <li>If you are located in a blocked region, you will be redirected to an access restriction page</li>
+                <li>We are not obligated to provide access to users from blocked regions</li>
+                <li>Attempting to bypass geographic restrictions using VPNs, proxies, or other methods is prohibited</li>
+                <li>Violation of geographic restrictions may result in permanent account termination</li>
+              </ul>
+              <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
+                <strong>Note:</strong> Geographic restrictions are implemented for various reasons including legal compliance, security, and business operations. If you believe you have been incorrectly blocked, please contact our support team.
+              </p>
+            </section>
+
+            <section className="mb-8">
+              <h2 className="text-2xl font-display font-bold text-gray-800 dark:text-gray-200 mb-4">
+                11. Limitation of Liability
               </h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
                 To the maximum extent permitted by law, Sugarbunny Stores shall not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits or revenues, whether incurred directly or indirectly, or any loss of data, use, goodwill, or other intangible losses resulting from your use of our services.
@@ -141,7 +184,7 @@ export default function TermsOfService() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-display font-bold text-gray-800 dark:text-gray-200 mb-4">
-                10. Termination
+                12. Termination
               </h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
                 We reserve the right to terminate or suspend your account and access to our services at any time, without prior notice, for any reason, including breach of these Terms of Service. Upon termination, your right to use the service will immediately cease.
@@ -150,7 +193,7 @@ export default function TermsOfService() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-display font-bold text-gray-800 dark:text-gray-200 mb-4">
-                11. Changes to Terms
+                13. Changes to Terms
               </h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
                 We reserve the right to modify these terms at any time. We will notify users of any material changes by posting the new Terms of Service on this page and updating the "Last updated" date. Your continued use of the service after any changes constitutes acceptance of the new terms.
@@ -159,7 +202,7 @@ export default function TermsOfService() {
 
             <section className="mb-8">
               <h2 className="text-2xl font-display font-bold text-gray-800 dark:text-gray-200 mb-4">
-                12. Contact Information
+                14. Contact Information
               </h2>
               <p className="text-gray-600 dark:text-gray-300 leading-relaxed mb-4">
                 If you have any questions about these Terms of Service, please contact us at:
