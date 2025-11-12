@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Product {
   id: number
@@ -22,6 +23,7 @@ export default function ProductDetail() {
   const params = useParams()
   const router = useRouter()
   const { addToCart } = useCart()
+  const { showToast } = useToast()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -200,7 +202,7 @@ export default function ProductDetail() {
                       onClick={() => {
                         // Double-check stock before adding to cart
                         if (product.stock <= 0) {
-                          alert('This product is out of stock and cannot be purchased.')
+                          showToast('This product is out of stock and cannot be purchased.', 'error')
                           return
                         }
                         addToCart({
@@ -210,7 +212,7 @@ export default function ProductDetail() {
                           image_url: product.image_url,
                           category: product.category
                         })
-                        alert('Product added to cart!')
+                        showToast('Product added to cart!', 'success')
                       }}
                       className="w-full px-6 py-4 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-semibold text-lg shadow-lg"
                     >

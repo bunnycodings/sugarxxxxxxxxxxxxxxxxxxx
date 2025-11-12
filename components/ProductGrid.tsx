@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Product {
   id: number
@@ -25,6 +26,7 @@ interface ProductGridProps {
 export default function ProductGrid({ products }: ProductGridProps) {
   const router = useRouter()
   const { addToCart } = useCart()
+  const { showToast } = useToast()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
 
@@ -50,7 +52,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
     
     // Prevent adding to cart if stock is 0 or less
     if (product.stock <= 0) {
-      alert('This product is out of stock and cannot be purchased.')
+      showToast('This product is out of stock and cannot be purchased.', 'error')
       return
     }
     
@@ -66,7 +68,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
       image_url: product.image_url,
       category: product.category
     })
-    alert('Product added to cart!')
+    showToast('Product added to cart!', 'success')
   }
 
   if (products.length === 0) {

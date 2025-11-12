@@ -3,10 +3,12 @@ import { Comic_Neue } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { CartProvider } from '@/contexts/CartContext'
+import { ToastProvider } from '@/contexts/ToastContext'
 import TopBar from '@/components/TopBar'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import BlackRibbon from '@/components/BlackRibbon'
+import Toast from '@/components/Toast'
 import { Analytics } from '@vercel/analytics/react'
 
 const comicNeue = Comic_Neue({ 
@@ -83,15 +85,18 @@ export default function RootLayout({
       <body className={`${comicNeue.className} flex flex-col min-h-screen`}>
         <ThemeProvider>
           <CartProvider>
-            <div className="relative">
-              <BlackRibbon />
-              <TopBar />
-            </div>
-            <Navbar />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
+            <ToastProvider>
+              <div className="relative">
+                <BlackRibbon />
+                <TopBar />
+              </div>
+              <Navbar />
+              <main className="flex-grow">
+                {children}
+              </main>
+              <Footer />
+              <Toast />
+            </ToastProvider>
           </CartProvider>
         </ThemeProvider>
         <Analytics />
