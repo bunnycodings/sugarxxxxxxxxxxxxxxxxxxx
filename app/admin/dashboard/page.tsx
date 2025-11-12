@@ -121,6 +121,7 @@ export default function AdminDashboard() {
   const [paymentSettingsSuccess, setPaymentSettingsSuccess] = useState(false)
 
 
+
   useEffect(() => {
     checkAuth()
     if (activeTab === 'users') fetchUsers()
@@ -608,12 +609,12 @@ export default function AdminDashboard() {
 
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex space-x-1">
+          <div className="flex space-x-1 overflow-x-auto">
             {(['users', 'products', 'orders', 'redeem-codes', 'reviews', 'payments'] as Tab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-3 font-medium transition-colors ${
+                className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab
                     ? 'border-b-2 border-pink-600 dark:border-pink-400 text-pink-600 dark:text-pink-400'
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'

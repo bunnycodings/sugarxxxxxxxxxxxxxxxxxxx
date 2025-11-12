@@ -13,11 +13,13 @@
     "generate-admin-sql": "node scripts/generate-admin-sql.js"
   },
   "dependencies": {
+    "@types/nodemailer": "^7.0.3",
     "@vercel/analytics": "^1.5.0",
     "bcryptjs": "^2.4.3",
     "mysql2": "^3.11.3",
     "next": "^14.2.5",
     "next-intl": "^4.5.1",
+    "nodemailer": "^7.0.10",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "stripe": "^14.21.0"
