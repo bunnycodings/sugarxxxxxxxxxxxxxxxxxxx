@@ -147,7 +147,7 @@ export default function Checkout() {
             price: Number(item.price) || 0,
             quantity: Number(item.quantity) || 0
           })),
-          total: calculatedTotal,
+          total: total,
           payment_method: paymentMethod,
           redeem_code: appliedDiscount?.code || null,
           customer: {
