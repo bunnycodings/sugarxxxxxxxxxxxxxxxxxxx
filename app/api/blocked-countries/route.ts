@@ -32,9 +32,3 @@ export async function GET() {
   }
 }
 
-// Function to clear cache (can be called when countries are updated)
-export function clearBlockedCountriesCache() {
-  cachedBlockedCountries = null
-  cacheTimestamp = 0
-}
-

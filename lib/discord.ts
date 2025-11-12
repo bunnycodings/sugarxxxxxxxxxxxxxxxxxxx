@@ -119,6 +119,7 @@ interface VisitorTrackingData {
   userAgent?: string
   path: string
   isBlocked?: boolean
+  isVpn?: boolean
 }
 
 export async function sendVisitorTrackingWebhook(data: VisitorTrackingData) {
@@ -136,9 +137,21 @@ export async function sendVisitorTrackingWebhook(data: VisitorTrackingData) {
     if (data.countryName) locationParts.push(data.countryName)
     const location = locationParts.length > 0 ? locationParts.join(', ') : 'Unknown'
 
+    // Determine title and color based on status
+    let title = '👤 New Visitor'
+    let color = 0x00aaff
+    
+    if (data.isBlocked) {
+      title = '🚫 Blocked Visitor Access'
+      color = 0xff0000
+    } else if (data.isVpn) {
+      title = '🔒 VPN Visitor'
+      color = 0xffaa00
+    }
+
     const embed = {
-      title: data.isBlocked ? '🚫 Blocked Visitor Access' : '👤 New Visitor',
-      color: data.isBlocked ? 0xff0000 : 0x00aaff,
+      title,
+      color,
       fields: [
         {
           name: '🌍 Location',
@@ -160,6 +173,15 @@ export async function sendVisitorTrackingWebhook(data: VisitorTrackingData) {
       footer: {
         text: 'SugarBunny Stores'
       }
+    }
+
+    // Add VPN status if detected
+    if (data.isVpn) {
+      embed.fields.push({
+        name: '🔒 VPN/Proxy',
+        value: '✅ Yes - Access Allowed',
+        inline: true
+      })
     }
 
     // Add additional location details if available

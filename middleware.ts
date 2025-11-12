@@ -54,6 +54,7 @@ async function getLocationDetails(ip: string): Promise<{
   region?: string
   timezone?: string
   isp?: string
+  isVpn?: boolean
 } | null> {
   // Skip localhost and private IPs
   if (!ip || ip === 'unknown' || ip.startsWith('127.') || ip.startsWith('192.168.') || ip.startsWith('10.')) {
@@ -61,7 +62,7 @@ async function getLocationDetails(ip: string): Promise<{
   }
 
   try {
-    // Use ipapi.co to get detailed location information
+    // Use ipapi.co to get detailed location information including VPN detection
     const geoResponse = await fetch(`https://ipapi.co/${ip}/json/`, {
       headers: {
         'User-Agent': 'SugarBunny-Stores/1.0'
@@ -70,13 +71,25 @@ async function getLocationDetails(ip: string): Promise<{
     
     if (geoResponse.ok) {
       const geoData = await geoResponse.json()
+      // Check for VPN/Proxy - ipapi.co returns 'vpn' field (true/false)
+      // Also check if the ISP name contains common VPN indicators
+      const isVpn = geoData.vpn === true || 
+                   geoData.proxy === true ||
+                   (geoData.org && (
+                     geoData.org.toLowerCase().includes('vpn') ||
+                     geoData.org.toLowerCase().includes('proxy') ||
+                     geoData.org.toLowerCase().includes('hosting') ||
+                     geoData.org.toLowerCase().includes('datacenter')
+                   ))
+      
       return {
         country: geoData.country_code || undefined,
         countryName: geoData.country_name || undefined,
         city: geoData.city || undefined,
         region: geoData.region || undefined,
         timezone: geoData.timezone || undefined,
-        isp: geoData.org || undefined
+        isp: geoData.org || undefined,
+        isVpn: isVpn || false
       }
     }
   } catch (error) {
@@ -101,16 +114,39 @@ export async function middleware(request: NextRequest) {
   
   let isBlocked = false
   let detectedCountry = country?.toUpperCase()
+  let isVpn = false
   
-  // If country is in blocked list, block access
+  // Get location details including VPN detection
+  let locationData: { country?: string; countryName?: string; city?: string; region?: string; timezone?: string; isp?: string; isVpn?: boolean } | null = null
+  
+  // Only check location if we have a real IP
+  if (ip && ip !== 'unknown' && !ip.startsWith('127.') && !ip.startsWith('192.168.') && !ip.startsWith('10.')) {
+    try {
+      locationData = await getLocationDetails(ip)
+      if (locationData) {
+        isVpn = locationData.isVpn || false
+        // Use location data for country if Vercel geo is not available
+        if (!detectedCountry && locationData.country) {
+          detectedCountry = locationData.country.toUpperCase()
+        }
+      }
+    } catch (error) {
+      console.error('Error getting location details:', error)
+    }
+  }
+  
+  // If country is in blocked list, check if VPN (VPN bypasses blocking)
   if (country && blockedCountries.length > 0 && blockedCountries.includes(country.toUpperCase())) {
-    isBlocked = true
-    detectedCountry = country.toUpperCase()
+    if (!isVpn) {
+      isBlocked = true
+      detectedCountry = country.toUpperCase()
+    }
+    // If VPN, allow access but still track it
   }
   
   // Fallback: If no geolocation available, try to detect from IP
   // This is useful for local development or non-Vercel deployments
-  if (!detectedCountry && blockedCountries.length > 0) {
+  if (!detectedCountry && blockedCountries.length > 0 && !isVpn) {
     try {
       // Only check if we have a real IP (not localhost)
       if (ip && ip !== 'unknown' && !ip.startsWith('127.') && !ip.startsWith('192.168.') && !ip.startsWith('10.')) {
@@ -125,7 +161,8 @@ export async function middleware(request: NextRequest) {
           const countryCode = await geoResponse.text().then(t => t.trim().toUpperCase())
           if (countryCode) {
             detectedCountry = countryCode
-            if (blockedCountries.includes(countryCode)) {
+            // Only block if not VPN
+            if (blockedCountries.includes(countryCode) && !isVpn) {
               isBlocked = true
             }
           }
@@ -149,34 +186,56 @@ export async function middleware(request: NextRequest) {
   
   if (shouldTrack) {
     // Track visitor asynchronously (don't block the request)
-    // Get detailed location information
-    getLocationDetails(ip).then(locationData => {
+    // Use location data we already fetched, or fetch it if we don't have it
+    if (locationData) {
+      // We already have location data, send it immediately
       sendVisitorTrackingWebhook({
         ip,
-        country: detectedCountry || locationData?.country,
-        countryName: locationData?.countryName,
-        city: locationData?.city,
-        region: locationData?.region,
-        timezone: locationData?.timezone,
-        isp: locationData?.isp,
+        country: detectedCountry || locationData.country,
+        countryName: locationData.countryName,
+        city: locationData.city,
+        region: locationData.region,
+        timezone: locationData.timezone,
+        isp: locationData.isp,
         userAgent: request.headers.get('user-agent') || undefined,
         path,
-        isBlocked
+        isBlocked,
+        isVpn: locationData.isVpn
       }).catch(err => {
         console.error('Failed to send visitor tracking:', err)
       })
-    }).catch(err => {
-      // If location fetch fails, still send basic tracking
-      sendVisitorTrackingWebhook({
-        ip,
-        country: detectedCountry,
-        userAgent: request.headers.get('user-agent') || undefined,
-        path,
-        isBlocked
+    } else {
+      // Fetch location details if we don't have them yet
+      getLocationDetails(ip).then(locData => {
+        sendVisitorTrackingWebhook({
+          ip,
+          country: detectedCountry || locData?.country,
+          countryName: locData?.countryName,
+          city: locData?.city,
+          region: locData?.region,
+          timezone: locData?.timezone,
+          isp: locData?.isp,
+          userAgent: request.headers.get('user-agent') || undefined,
+          path,
+          isBlocked,
+          isVpn: locData?.isVpn || false
+        }).catch(err => {
+          console.error('Failed to send visitor tracking:', err)
+        })
       }).catch(err => {
-        console.error('Failed to send visitor tracking:', err)
+        // If location fetch fails, still send basic tracking
+        sendVisitorTrackingWebhook({
+          ip,
+          country: detectedCountry,
+          userAgent: request.headers.get('user-agent') || undefined,
+          path,
+          isBlocked,
+          isVpn: false
+        }).catch(err => {
+          console.error('Failed to send visitor tracking:', err)
+        })
       })
-    })
+    }
   }
   
   // If blocked, redirect to blocked page
