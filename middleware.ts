@@ -1,15 +1,15 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Blocked country code (UK)
-const BLOCKED_COUNTRY = 'GB'
+// Blocked country codes
+const BLOCKED_COUNTRIES = ['GB', 'JO'] // UK and Jordan
 
 export async function middleware(request: NextRequest) {
   // Get country from Vercel's geolocation (if available)
   const country = request.geo?.country || request.headers.get('x-vercel-ip-country')
   
-  // If country is UK, block access
-  if (country === BLOCKED_COUNTRY) {
+  // If country is in blocked list, block access
+  if (country && BLOCKED_COUNTRIES.includes(country)) {
     return NextResponse.redirect(new URL('/blocked', request.url))
   }
   
@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
         
         if (geoResponse.ok) {
           const detectedCountry = await geoResponse.text()
-          if (detectedCountry.trim() === BLOCKED_COUNTRY) {
+          if (BLOCKED_COUNTRIES.includes(detectedCountry.trim())) {
             return NextResponse.redirect(new URL('/blocked', request.url))
           }
         }
@@ -58,7 +58,7 @@ export const config = {
      * - favicon.ico (favicon file)
      * - blocked (the blocked page itself)
      * 
-     * Note: API routes are also blocked for UK IPs
+     * Note: API routes are also blocked for blocked country IPs
      */
     '/((?!_next/static|_next/image|favicon.ico|blocked).*)',
   ],

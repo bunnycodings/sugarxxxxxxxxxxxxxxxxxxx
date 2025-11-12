@@ -34,7 +34,7 @@ export default function BlockedPage() {
               Why am I seeing this?
             </p>
             <p className="text-sm text-red-700 dark:text-red-400">
-              This website is not available in the United Kingdom due to regional restrictions.
+              This website is not available in your region (United Kingdom or Jordan) due to regional restrictions.
             </p>
           </div>
           
