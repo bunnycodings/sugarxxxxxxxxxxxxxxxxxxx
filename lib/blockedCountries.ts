@@ -371,10 +371,10 @@ export async function getAllBlockedCountriesIncludingExpired(): Promise<BlockedC
 export async function getBlockedCountryCodes(): Promise<string[]> {
   const pool = db
   // Only get countries that are not expired
-  const [rows] = await pool.query<BlockedCountry[]>(
+  const [rows] = await pool.query(
     'SELECT country_code FROM blocked_countries WHERE (expires_at IS NULL OR expires_at > NOW())'
   )
-  return rows.map(c => c.country_code.toUpperCase())
+  return (rows as BlockedCountry[]).map(c => c.country_code.toUpperCase())
 }
 
 export async function addBlockedCountry(
@@ -395,12 +395,12 @@ export async function addBlockedCountry(
     ]
   )
   
-  const [rows] = await pool.query<BlockedCountry[]>(
+  const [rows] = await pool.query(
     'SELECT * FROM blocked_countries WHERE country_code = ?',
     [countryCode.toUpperCase()]
   )
   
-  return rows[0]
+  return (rows as BlockedCountry[])[0]
 }
 
 export async function addBlockedCountries(
@@ -439,12 +439,12 @@ export async function updateBlockedCountryExpiration(
     ]
   )
   
-  const [rows] = await pool.query<BlockedCountry[]>(
+  const [rows] = await pool.query(
     'SELECT * FROM blocked_countries WHERE country_code = ?',
     [countryCode.toUpperCase()]
   )
   
-  return rows[0] || null
+  return (rows as BlockedCountry[])[0] || null
 }
 
 export async function removeBlockedCountry(countryCode: string): Promise<boolean> {
