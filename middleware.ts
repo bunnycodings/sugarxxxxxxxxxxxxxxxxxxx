@@ -47,6 +47,52 @@ async function getBlockedCountries(): Promise<string[]> {
   return []
 }
 
+function isVercelIP(ip: string): boolean {
+  if (!ip || ip === 'unknown') return false
+  
+  // Vercel IP ranges and known IPs
+  // Vercel uses various IP ranges for their infrastructure
+  const vercelIPs = [
+    '76.76.21.', // Vercel IP range
+    '76.76.22.', // Vercel IP range
+    '76.76.23.', // Vercel IP range
+  ]
+  
+  // Check if IP starts with any Vercel IP prefix
+  return vercelIPs.some(prefix => ip.startsWith(prefix))
+}
+
+function isVercelInternalRequest(request: NextRequest): boolean {
+  // Check for Vercel internal request indicators
+  // Vercel adds specific headers for internal requests
+  const userAgent = request.headers.get('user-agent') || ''
+  
+  // Check if it's a Vercel internal request (SSR, edge functions, etc.)
+  // Vercel internal requests often have specific patterns
+  if (userAgent.includes('vercel') && userAgent.includes('bot')) {
+    return true
+  }
+  
+  // Check for Vercel IP
+  const ip = request.ip || 
+             request.headers.get('x-forwarded-for')?.split(',')[0] || 
+             request.headers.get('x-real-ip') ||
+             'unknown'
+  
+  if (isVercelIP(ip)) {
+    return true
+  }
+  
+  // Check for Vercel internal headers (middleware rewrites, etc.)
+  // These indicate internal Vercel infrastructure requests
+  if (request.headers.get('x-middleware-rewrite') || 
+      request.headers.get('x-vercel-cache') === 'HIT') {
+    return true
+  }
+  
+  return false
+}
+
 async function getLocationDetails(ip: string): Promise<{
   country?: string
   countryName?: string
@@ -58,6 +104,11 @@ async function getLocationDetails(ip: string): Promise<{
 } | null> {
   // Skip localhost and private IPs
   if (!ip || ip === 'unknown' || ip.startsWith('127.') || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+    return null
+  }
+  
+  // Skip Vercel IPs
+  if (isVercelIP(ip)) {
     return null
   }
 
@@ -100,6 +151,30 @@ async function getLocationDetails(ip: string): Promise<{
 }
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname
+  
+  // Check if user has visited main page (required before accessing other pages)
+  const hasVisitedMainPage = request.cookies.get('visited_main_page')?.value === 'true'
+  
+  // Pages that don't require visiting main page first
+  const allowedPaths = [
+    '/', // Main page itself
+    '/api', // API routes
+    '/admin', // Admin routes
+    '/_next', // Next.js internal
+    '/favicon.ico', // Favicon
+    '/blocked', // Blocked page
+  ]
+  
+  const isAllowedPath = allowedPaths.some(allowedPath => 
+    path === allowedPath || path.startsWith(allowedPath + '/')
+  )
+  
+  // If user tries to access a page without visiting main page first, redirect to main page
+  if (!isAllowedPath && !hasVisitedMainPage && !isVercelInternalRequest(request)) {
+    return NextResponse.redirect(new URL('/', request.url))
+  }
+  
   // Get IP address
   const ip = request.ip || 
              request.headers.get('x-forwarded-for')?.split(',')[0] || 
@@ -175,14 +250,10 @@ export async function middleware(request: NextRequest) {
     }
   }
   
-  // Track visitor (only for page visits, not static assets)
-  // Skip tracking for API routes, static files, and internal Next.js routes
-  const path = request.nextUrl.pathname
-  const shouldTrack = path && 
-                     !path.startsWith('/api/') && 
-                     !path.startsWith('/_next/') && 
-                     !path.startsWith('/favicon.ico') &&
-                     path !== '/blocked'
+  // Track visitor ONLY on the main page (/) and skip Vercel internal requests
+  const isMainPage = path === '/'
+  const isVercelRequest = isVercelInternalRequest(request)
+  const shouldTrack = isMainPage && !isVercelRequest
   
   if (shouldTrack) {
     // Track visitor asynchronously (don't block the request)
@@ -243,7 +314,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/blocked', request.url))
   }
   
-  return NextResponse.next()
+  // Set cookie when user visits main page (if not already set)
+  const response = NextResponse.next()
+  if (path === '/' && !hasVisitedMainPage) {
+    response.cookies.set('visited_main_page', 'true', {
+      maxAge: 60 * 60 * 24, // 24 hours
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    })
+  }
+  
+  return response
 }
 
 // Configure which routes to run middleware on
