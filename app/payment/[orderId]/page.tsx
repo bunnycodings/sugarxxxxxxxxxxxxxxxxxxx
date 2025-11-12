@@ -381,9 +381,28 @@ export default function PaymentPage() {
             {paymentMethod === 'promptpay' && (
               <>
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  Pay via Promptpay
+                  Scan QR Code to Pay via Promptpay
                 </h2>
                 <div className="space-y-4 mb-6">
+                  <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4 text-center">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                      Scan this QR Code:
+                    </h3>
+                    <div className="flex justify-center mb-4">
+                      <div className="relative max-w-xs w-full aspect-square">
+                        <Image
+                          src="/assets/img/payments/qr.jpg"
+                          alt="Promptpay QR Code"
+                          width={400}
+                          height={400}
+                          className="rounded-lg border-2 border-gray-300 dark:border-gray-600 object-contain"
+                          onError={() => {
+                            console.error('Failed to load QR image')
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                   <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
                       Payment Amount:
@@ -397,7 +416,9 @@ export default function PaymentPage() {
                   <p className="mb-2"><strong>Instructions:</strong></p>
                   <ol className="list-decimal list-inside space-y-1">
                     <li>Open your mobile banking app or Promptpay-enabled app</li>
-                    <li>Complete the payment for the exact amount shown above</li>
+                    <li>Scan the QR code above</li>
+                    <li>Enter the exact amount shown</li>
+                    <li>Complete the payment</li>
                     <li>Fill out the payment form on the right with your transaction details</li>
                     <li>Upload your payment receipt/slip - it will be automatically sent to our Discord webhook</li>
                     <li>Submit the form - your payment information will be processed and sent to our Discord</li>

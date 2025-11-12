@@ -174,9 +174,12 @@ export default function Checkout() {
         return
       }
 
-      // Clear cart and redirect to payment page
-      clearCart()
+      // Redirect to payment page first, then clear cart after navigation
       router.push(`/payment/${data.orderId}`)
+      // Clear cart after a short delay to ensure navigation has started
+      setTimeout(() => {
+        clearCart()
+      }, 100)
     } catch (err) {
       setError('An error occurred. Please try again.')
       setLoading(false)
