@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 // Blocked country codes
-const BLOCKED_COUNTRIES = ['GB', 'JO'] // UK and Jordan
+const BLOCKED_COUNTRIES = ['GB'] // UK
 
 export async function middleware(request: NextRequest) {
   // Get country from Vercel's geolocation (if available)
