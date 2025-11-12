@@ -7,7 +7,7 @@ import { useCart } from '@/contexts/CartContext'
 
 export default function Cart() {
   const router = useRouter()
-  const { items, removeFromCart, updateQuantity, getTotal, clearCart } = useCart()
+  const { items, removeFromCart, updateQuantity, getSubtotal, getVAT, getTotal, clearCart } = useCart()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
@@ -40,6 +40,8 @@ export default function Cart() {
     router.push('/checkout')
   }
 
+  const subtotal = getSubtotal()
+  const vat = getVAT()
   const total = getTotal()
 
   if (isCheckingAuth) {

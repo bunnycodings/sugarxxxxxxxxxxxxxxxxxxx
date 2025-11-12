@@ -498,31 +498,28 @@ export default function Checkout() {
                   </div>
                 ))}
               </div>
-              {appliedDiscount && discountAmount > 0 && (
-                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
-                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                    <span>Subtotal</span>
-                    <span className="line-through">฿{originalTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  </div>
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                  <span>Subtotal</span>
+                  <span>฿{subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                {appliedDiscount && discountAmount > 0 && (
                   <div className="flex justify-between text-sm text-green-600 dark:text-green-400">
                     <span>Discount ({appliedDiscount.code})</span>
                     <span>-฿{discountAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
+                )}
+                <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                  <span>VAT (7%)</span>
+                  <span>฿{vat.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
-              )}
+              </div>
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <div className="flex justify-between text-xl font-bold text-gray-900 dark:text-gray-100">
                   <span>Total</span>
-                  <div className="flex flex-col items-end">
-                    {appliedDiscount && discountAmount > 0 && (
-                      <span className="text-sm font-normal text-gray-500 dark:text-gray-400 line-through mb-1">
-                        ฿{originalTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    )}
-                    <span className="text-pink-600 dark:text-pink-400">
-                      ฿{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
+                  <span className="text-pink-600 dark:text-pink-400">
+                    ฿{total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
                 </div>
               </div>
             </div>
