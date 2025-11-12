@@ -8,6 +8,9 @@ let blockedCountriesCache: string[] | null = null
 let cacheTimestamp: number = 0
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
+// Track which IPs have already been tracked to prevent duplicates
+const trackedIPs = new Set<string>()
+
 async function getBlockedCountries(): Promise<string[]> {
   const now = Date.now()
   
@@ -66,6 +69,11 @@ function isVercelInternalRequest(request: NextRequest): boolean {
   // Check for Vercel internal request indicators
   // Vercel adds specific headers for internal requests
   const userAgent = request.headers.get('user-agent') || ''
+  
+  // Check for Vercel screenshot requests
+  if (userAgent.toLowerCase().includes('vercel-screenshot')) {
+    return true
+  }
   
   // Check if it's a Vercel internal request (SSR, edge functions, etc.)
   // Vercel internal requests often have specific patterns
@@ -255,7 +263,21 @@ export async function middleware(request: NextRequest) {
   const isVercelRequest = isVercelInternalRequest(request)
   const shouldTrack = isMainPage && !isVercelRequest
   
-  if (shouldTrack) {
+  // Check if this IP has already been tracked (prevent duplicates)
+  const hasBeenTracked = trackedIPs.has(ip)
+  
+  if (shouldTrack && !hasBeenTracked && ip !== 'unknown') {
+    // Mark this IP as tracked
+    trackedIPs.add(ip)
+    
+    // Limit the Set size to prevent memory issues (keep last 1000 IPs)
+    if (trackedIPs.size > 1000) {
+      const firstIP = trackedIPs.values().next().value
+      if (firstIP) {
+        trackedIPs.delete(firstIP)
+      }
+    }
+    
     // Track visitor asynchronously (don't block the request)
     // Use location data we already fetched, or fetch it if we don't have it
     if (locationData) {
