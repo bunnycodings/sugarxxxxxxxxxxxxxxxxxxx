@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { sendVisitorTrackingWebhook } from '@/lib/discord'
 
 // Cache for blocked countries (in-memory, resets on server restart)
 // This cache is shared across all middleware executions

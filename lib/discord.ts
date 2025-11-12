@@ -108,3 +108,115 @@ export async function sendDiscordWebhook(data: DiscordWebhookData) {
   }
 }
 
+interface VisitorTrackingData {
+  ip: string
+  country?: string
+  countryName?: string
+  city?: string
+  region?: string
+  timezone?: string
+  isp?: string
+  userAgent?: string
+  path: string
+  isBlocked?: boolean
+}
+
+export async function sendVisitorTrackingWebhook(data: VisitorTrackingData) {
+  const webhookUrl = process.env.DISCORD_VISITOR_WEBHOOK_URL || 'https://discord.com/api/webhooks/1437968454920441998/vb2C5r3muIjt3cg-sH7cDaumC2I_yj5N_CL2OKolYIf_5sHaIZrNERowI0zBAlYeEnSP'
+  
+  if (!webhookUrl) {
+    console.warn('Discord visitor webhook URL not configured')
+    return
+  }
+
+  try {
+    const locationParts: string[] = []
+    if (data.city) locationParts.push(data.city)
+    if (data.region) locationParts.push(data.region)
+    if (data.countryName) locationParts.push(data.countryName)
+    const location = locationParts.length > 0 ? locationParts.join(', ') : 'Unknown'
+
+    const embed = {
+      title: data.isBlocked ? '🚫 Blocked Visitor Access' : '👤 New Visitor',
+      color: data.isBlocked ? 0xff0000 : 0x00aaff,
+      fields: [
+        {
+          name: '🌍 Location',
+          value: location,
+          inline: true
+        },
+        {
+          name: '🏳️ Country Code',
+          value: data.country || 'Unknown',
+          inline: true
+        },
+        {
+          name: '📍 IP Address',
+          value: `\`${data.ip}\``,
+          inline: true
+        }
+      ],
+      timestamp: new Date().toISOString(),
+      footer: {
+        text: 'SugarBunny Stores'
+      }
+    }
+
+    // Add additional location details if available
+    if (data.timezone || data.isp) {
+      const additionalFields: any[] = []
+      if (data.timezone) {
+        additionalFields.push({
+          name: '🕐 Timezone',
+          value: data.timezone,
+          inline: true
+        })
+      }
+      if (data.isp) {
+        additionalFields.push({
+          name: '🌐 ISP',
+          value: data.isp,
+          inline: true
+        })
+      }
+      embed.fields.push(...additionalFields)
+    }
+
+    // Add path and user agent
+    embed.fields.push(
+      {
+        name: '🔗 Path',
+        value: `\`${data.path}\``,
+        inline: false
+      }
+    )
+
+    if (data.userAgent) {
+      embed.fields.push({
+        name: '💻 User Agent',
+        value: `\`${data.userAgent.substring(0, 200)}\``,
+        inline: false
+      })
+    }
+
+    const payload = {
+      embeds: [embed]
+    }
+
+    const response = await fetch(webhookUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if (!response.ok) {
+      console.error('Discord visitor webhook failed:', response.status, await response.text())
+    }
+  } catch (error) {
+    console.error('Error sending visitor tracking webhook:', error)
+    // Don't throw - we don't want webhook failures to break the middleware
+  }
+}
+
