@@ -51,7 +51,7 @@ interface Review {
   created_at: string
 }
 
-type Tab = 'users' | 'products' | 'orders' | 'redeem-codes' | 'reviews' | 'payments'
+type Tab = 'users' | 'products' | 'orders' | 'redeem-codes' | 'reviews' | 'payments' | 'blocked-countries'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -120,6 +120,16 @@ export default function AdminDashboard() {
   const [paymentSettingsSaving, setPaymentSettingsSaving] = useState(false)
   const [paymentSettingsSuccess, setPaymentSettingsSuccess] = useState(false)
 
+  // Blocked Countries state
+  const [blockedCountries, setBlockedCountries] = useState<any[]>([])
+  const [allCountries, setAllCountries] = useState<Array<{ code: string; name: string }>>([])
+  const [blockedCountriesLoading, setBlockedCountriesLoading] = useState(false)
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([])
+  const [blockDuration, setBlockDuration] = useState<'30s' | '1m' | '5m' | '1h' | '24h' | '7d' | '14d' | '30d' | '3month' | '6month' | '1year' | 'permanent'>('permanent')
+  const [editingCountry, setEditingCountry] = useState<any | null>(null)
+  const [editingDuration, setEditingDuration] = useState<'30s' | '1m' | '5m' | '1h' | '24h' | '7d' | '14d' | '30d' | '3month' | '6month' | '1year' | 'permanent'>('permanent')
+  const [savingBlocked, setSavingBlocked] = useState(false)
+
   useEffect(() => {
     checkAuth()
     if (activeTab === 'users') fetchUsers()
@@ -128,6 +138,7 @@ export default function AdminDashboard() {
     if (activeTab === 'redeem-codes') fetchRedeemCodes()
     if (activeTab === 'reviews') fetchReviews()
     if (activeTab === 'payments') fetchPaymentSettings()
+    if (activeTab === 'blocked-countries') fetchBlockedCountries()
   }, [activeTab])
 
   const checkAuth = async () => {
@@ -546,6 +557,144 @@ export default function AdminDashboard() {
     router.push('/admin/login')
   }
 
+  // Blocked Countries functions
+  const fetchBlockedCountries = async () => {
+    try {
+      setBlockedCountriesLoading(true)
+      const response = await fetch('/api/admin/blocked-countries')
+      if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/admin/login')
+          return
+        }
+        return
+      }
+      const data = await response.json()
+      setBlockedCountries(data.blockedCountries || [])
+      setAllCountries(data.allCountries || [])
+    } catch (err) {
+      console.error('Error fetching blocked countries:', err)
+    } finally {
+      setBlockedCountriesLoading(false)
+    }
+  }
+
+  const handleAddBlockedCountries = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (selectedCountries.length === 0) {
+      alert('Please select at least one country')
+      return
+    }
+
+    try {
+      setSavingBlocked(true)
+      const response = await fetch('/api/admin/blocked-countries', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          country_codes: selectedCountries,
+          duration: blockDuration
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to block countries')
+      }
+
+      const data = await response.json()
+      setBlockedCountries(data.countries || [])
+      setSelectedCountries([])
+      setBlockDuration('permanent')
+      alert(data.message || 'Countries blocked successfully')
+    } catch (err: any) {
+      console.error('Error blocking countries:', err)
+      alert(err.message || 'Failed to block countries. Please try again.')
+    } finally {
+      setSavingBlocked(false)
+    }
+  }
+
+  const handleUpdateBlockExpiration = async (countryCode: string) => {
+    try {
+      setSavingBlocked(true)
+      const response = await fetch('/api/admin/blocked-countries', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          country_code: countryCode,
+          duration: editingDuration
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update expiration')
+      }
+
+      await fetchBlockedCountries()
+      setEditingCountry(null)
+      alert('Block expiration updated successfully')
+    } catch (err: any) {
+      console.error('Error updating expiration:', err)
+      alert(err.message || 'Failed to update expiration. Please try again.')
+    } finally {
+      setSavingBlocked(false)
+    }
+  }
+
+  const handleRemoveBlockedCountry = async (countryCode: string) => {
+    if (!confirm('Are you sure you want to remove this country from the blocked list?')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/admin/blocked-countries?country_code=${countryCode}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to remove country')
+      }
+
+      await fetchBlockedCountries()
+      alert('Country removed from blocked list')
+    } catch (err: any) {
+      console.error('Error removing country:', err)
+      alert(err.message || 'Failed to remove country. Please try again.')
+    }
+  }
+
+  const formatExpiration = (expiresAt: string | null): string => {
+    if (!expiresAt) {
+      return 'Permanent'
+    }
+
+    const expires = new Date(expiresAt)
+    const now = new Date()
+    
+    if (expires <= now) {
+      return 'Expired'
+    }
+
+    const diff = expires.getTime() - now.getTime()
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000)
+
+    if (days > 0) {
+      return `${days}d ${hours}h remaining`
+    } else if (hours > 0) {
+      return `${hours}h ${minutes}m remaining`
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s remaining`
+    } else {
+      return `${seconds}s remaining`
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -578,7 +727,7 @@ export default function AdminDashboard() {
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex space-x-1">
-            {(['users', 'products', 'orders', 'redeem-codes', 'reviews', 'payments'] as Tab[]).map((tab) => (
+            {(['users', 'products', 'orders', 'redeem-codes', 'reviews', 'payments', 'blocked-countries'] as Tab[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -588,7 +737,7 @@ export default function AdminDashboard() {
                     : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
                 }`}
               >
-                {tab === 'users' ? 'Users' : tab === 'products' ? 'Products' : tab === 'orders' ? 'Orders' : tab === 'redeem-codes' ? 'Redeem Codes' : tab === 'reviews' ? 'Reviews' : 'Payment Settings'}
+                {tab === 'users' ? 'Users' : tab === 'products' ? 'Products' : tab === 'orders' ? 'Orders' : tab === 'redeem-codes' ? 'Redeem Codes' : tab === 'reviews' ? 'Reviews' : tab === 'payments' ? 'Payment Settings' : 'Blocked Countries'}
               </button>
             ))}
           </div>
@@ -1481,6 +1630,207 @@ export default function AdminDashboard() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Blocked Countries Tab */}
+        {activeTab === 'blocked-countries' && (
+          <div className="space-y-6">
+            {/* Add Blocked Countries Form */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-colors">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Block Countries</h2>
+              </div>
+              <form onSubmit={handleAddBlockedCountries} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Select Countries (Hold Ctrl/Cmd to select multiple)
+                  </label>
+                  <select
+                    multiple
+                    value={selectedCountries}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value)
+                      setSelectedCountries(selected)
+                    }}
+                    className="w-full h-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    size={10}
+                  >
+                    {allCountries.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.code} - {country.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    {selectedCountries.length} country(ies) selected
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Block Duration
+                  </label>
+                  <select
+                    value={blockDuration}
+                    onChange={(e) => setBlockDuration(e.target.value as any)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  >
+                    <option value="30s">30 seconds</option>
+                    <option value="1m">1 minute</option>
+                    <option value="5m">5 minutes</option>
+                    <option value="1h">1 hour</option>
+                    <option value="24h">24 hours</option>
+                    <option value="7d">7 days</option>
+                    <option value="14d">14 days</option>
+                    <option value="30d">30 days</option>
+                    <option value="3month">3 months</option>
+                    <option value="6month">6 months</option>
+                    <option value="1year">1 year</option>
+                    <option value="permanent">Permanent</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={savingBlocked || selectedCountries.length === 0}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {savingBlocked ? 'Blocking...' : `Block ${selectedCountries.length} Country(ies)`}
+                </button>
+              </form>
+            </div>
+
+            {/* Blocked Countries List */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transition-colors">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">
+                  Blocked Countries ({blockedCountries.length})
+                </h2>
+              </div>
+              {blockedCountriesLoading ? (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading blocked countries...</div>
+              ) : blockedCountries.length === 0 ? (
+                <div className="p-8 text-center text-gray-500 dark:text-gray-400">No countries are currently blocked</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Country Code</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Country Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Expiration</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Created</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                      {blockedCountries.map((country) => {
+                        const isExpired = country.expires_at && new Date(country.expires_at) <= new Date()
+                        return (
+                          <tr key={country.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${isExpired ? 'opacity-60' : ''}`}>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{country.country_code}</td>
+                            <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{country.country_name}</td>
+                            <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                              {formatExpiration(country.expires_at)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                isExpired 
+                                  ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                                  : country.expires_at === null
+                                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
+                                  : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                              }`}>
+                                {isExpired ? 'Expired' : country.expires_at === null ? 'Permanent' : 'Temporary'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                              {formatDate(country.created_at)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                              <button
+                                onClick={() => {
+                                  setEditingCountry(country)
+                                  // Determine current duration from expires_at
+                                  if (!country.expires_at) {
+                                    setEditingDuration('permanent')
+                                  } else {
+                                    // Set a default, user can change it
+                                    setEditingDuration('permanent')
+                                  }
+                                }}
+                                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-xs"
+                              >
+                                Edit Time
+                              </button>
+                              <button
+                                onClick={() => handleRemoveBlockedCountry(country.country_code)}
+                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Edit Expiration Modal */}
+            {editingCountry && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 max-w-md w-full">
+                  <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">
+                    Edit Block Duration - {editingCountry.country_name}
+                  </h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        New Block Duration
+                      </label>
+                      <select
+                        value={editingDuration}
+                        onChange={(e) => setEditingDuration(e.target.value as any)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      >
+                        <option value="30s">30 seconds</option>
+                        <option value="1m">1 minute</option>
+                        <option value="5m">5 minutes</option>
+                        <option value="1h">1 hour</option>
+                        <option value="24h">24 hours</option>
+                        <option value="7d">7 days</option>
+                        <option value="14d">14 days</option>
+                        <option value="30d">30 days</option>
+                        <option value="3month">3 months</option>
+                        <option value="6month">6 months</option>
+                        <option value="1year">1 year</option>
+                        <option value="permanent">Permanent</option>
+                      </select>
+                    </div>
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => handleUpdateBlockExpiration(editingCountry.country_code)}
+                        disabled={savingBlocked}
+                        className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {savingBlocked ? 'Updating...' : 'Update'}
+                      </button>
+                      <button
+                        onClick={() => setEditingCountry(null)}
+                        className="flex-1 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

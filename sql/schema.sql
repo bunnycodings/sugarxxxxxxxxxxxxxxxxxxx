@@ -248,6 +248,21 @@ CREATE TABLE IF NOT EXISTS user_sessions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================
+-- Blocked Countries Table
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS blocked_countries (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  country_code VARCHAR(2) UNIQUE NOT NULL,
+  country_name VARCHAR(100) NOT NULL,
+  expires_at TIMESTAMP NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_country_code (country_code),
+  INDEX idx_expires_at (expires_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================
 -- How to Add More Admins
 -- ============================================
 -- Option 1: Generate SQL hash
