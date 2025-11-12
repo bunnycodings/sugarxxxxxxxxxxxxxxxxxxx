@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import pool from '@/lib/db'
+import { decreaseStockForOrder } from '@/lib/orders'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,11 +35,24 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid status value' }, { status: 400 })
     }
 
+    // Get current order status before updating
+    const [currentOrderRows] = await pool.execute(
+      'SELECT status FROM orders WHERE id = ?',
+      [orderId]
+    ) as any[]
+    
+    const previousStatus = currentOrderRows.length > 0 ? currentOrderRows[0].status : null
+
     // Update order status
     await pool.execute(
       'UPDATE orders SET status = ? WHERE id = ?',
       [status, orderId]
     )
+
+    // Decrease stock if order is being marked as paid or completed
+    if ((status === 'paid' || status === 'completed') && previousStatus !== 'paid' && previousStatus !== 'completed') {
+      await decreaseStockForOrder(orderId, previousStatus)
+    }
 
     return NextResponse.json({ 
       success: true, 

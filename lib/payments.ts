@@ -1,4 +1,5 @@
 import pool from './db'
+import { decreaseStockForOrder } from './orders'
 
 export interface Payment {
   id?: number
@@ -72,12 +73,25 @@ export async function createPayment(payment: Payment) {
     
     const [result] = await pool.execute(query, values) as any[]
 
+    // Get current order status before updating
+    const [currentOrderRows] = await pool.execute(
+      'SELECT status FROM orders WHERE id = ?',
+      [payment.order_id]
+    ) as any[]
+    
+    const previousStatus = currentOrderRows.length > 0 ? currentOrderRows[0].status : null
+
     // Update order status based on payment status
     const orderStatus = paymentStatus === 'completed' ? 'paid' : 'payment_pending'
     await pool.execute(
       'UPDATE orders SET status = ? WHERE id = ?',
       [orderStatus, payment.order_id]
     )
+
+    // Decrease stock if payment is completed and order is being marked as paid for the first time
+    if (paymentStatus === 'completed' && previousStatus !== 'paid' && previousStatus !== 'completed') {
+      await decreaseStockForOrder(payment.order_id, previousStatus)
+    }
 
     return { id: result.insertId }
   } catch (error: any) {

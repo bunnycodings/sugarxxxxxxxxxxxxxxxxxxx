@@ -110,3 +110,52 @@ export async function getOrderById(id: number) {
   }
 }
 
+/**
+ * Decreases stock for all products in an order when the order is completed/paid
+ * Only decreases stock if the order was not already paid/completed
+ */
+export async function decreaseStockForOrder(orderId: number, previousStatus?: string) {
+  try {
+    // Only decrease stock if order is being marked as paid/completed for the first time
+    // If previous status was already paid/completed, don't decrease again
+    if (previousStatus === 'paid' || previousStatus === 'completed') {
+      return
+    }
+
+    // Get all order items
+    const [itemRows] = await pool.execute(
+      'SELECT product_id, quantity FROM order_items WHERE order_id = ?',
+      [orderId]
+    ) as any[]
+
+    if (!itemRows || itemRows.length === 0) {
+      return
+    }
+
+    // Decrease stock for each product
+    const connection = await pool.getConnection()
+    try {
+      await connection.beginTransaction()
+
+      for (const item of itemRows) {
+        // Decrease stock by quantity, ensuring it doesn't go below 0
+        await connection.execute(
+          'UPDATE products SET stock = GREATEST(0, stock - ?) WHERE id = ?',
+          [item.quantity, item.product_id]
+        )
+      }
+
+      await connection.commit()
+    } catch (error) {
+      await connection.rollback()
+      throw error
+    } finally {
+      connection.release()
+    }
+  } catch (error: any) {
+    console.error('Error decreasing stock for order:', error)
+    // Don't throw - we don't want to fail the order status update if stock update fails
+    // Log the error for manual review
+  }
+}
+

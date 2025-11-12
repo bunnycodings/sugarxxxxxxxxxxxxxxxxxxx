@@ -44,8 +44,12 @@ export default function PaymentPage() {
     payer_countryCode: '+1',
     payer_address: '',
     payer_city: '',
-    payer_country: ''
+    payer_country: '',
+    // For Promptpay
+    payer_name: '',
+    transaction_datetime: ''
   })
+  const [receiptFile, setReceiptFile] = useState<File | null>(null)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
 
@@ -113,6 +117,11 @@ export default function PaymentPage() {
         setError('Please fill in all required fields including payer details')
         return
       }
+    } else if (paymentMethod === 'promptpay') {
+      if (!paymentData.transaction_id || !paymentData.payer_name || !paymentData.amount || !paymentData.transaction_datetime || !receiptFile) {
+        setError('Please fill in all required fields and upload receipt')
+        return
+      }
     }
 
     setSubmitting(true)
@@ -134,9 +143,13 @@ export default function PaymentPage() {
         formData.append('payer_address', paymentData.payer_address)
         formData.append('payer_city', paymentData.payer_city)
         formData.append('payer_country', paymentData.payer_country)
+      } else if (paymentMethod === 'promptpay') {
+        formData.append('payer_name', paymentData.payer_name)
+        formData.append('transaction_datetime', paymentData.transaction_datetime)
+        if (receiptFile) {
+          formData.append('receipt', receiptFile)
+        }
       }
-      
-      // Payment receipt should be submitted via Discord ticket, not file upload
 
       const response = await fetch('/api/payments/submit', {
         method: 'POST',
@@ -364,6 +377,52 @@ export default function PaymentPage() {
                 </div>
               </>
             )}
+
+            {paymentMethod === 'promptpay' && (
+              <>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                  Scan QR Code to Pay via Promptpay
+                </h2>
+                <div className="space-y-4 mb-6">
+                  <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4 text-center">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">
+                      Scan this QR Code:
+                    </h3>
+                    <div className="flex justify-center mb-4">
+                      <img
+                        src="/assets/img/payments/qr.jpg"
+                        alt="Promptpay QR Code"
+                        className="max-w-xs w-full h-auto rounded-lg border-2 border-gray-300 dark:border-gray-600"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="400"%3E%3Crect fill="%23ddd" width="400" height="400"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em" font-size="16"%3EQR Code Not Found%3C/text%3E%3C/svg%3E'
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                      Payment Amount:
+                    </h3>
+                    <p className="text-2xl font-bold text-pink-600 dark:text-pink-400">
+                      ฿{(Number(order.total) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                  </div>
+                </div>
+                <div className="prose dark:prose-invert text-sm text-gray-600 dark:text-gray-300">
+                  <p className="mb-2"><strong>Instructions:</strong></p>
+                  <ol className="list-decimal list-inside space-y-1">
+                    <li>Open your mobile banking app or Promptpay-enabled app</li>
+                    <li>Scan the QR code above</li>
+                    <li>Enter the exact amount shown</li>
+                    <li>Complete the payment</li>
+                    <li>Fill out the payment form on the right with your transaction details</li>
+                    <li>Upload your payment receipt/slip</li>
+                    <li>Submit the form - your payment will be automatically sent to our Discord</li>
+                  </ol>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Payment Form */}
@@ -380,62 +439,141 @@ export default function PaymentPage() {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="transaction_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {paymentMethod === 'western_union' ? 'MTCN No' : 'Transaction ID'} *
-                    </label>
-                    <input
-                      type="text"
-                      id="transaction_id"
-                      required
-                      value={paymentData.transaction_id}
-                      onChange={(e) => setPaymentData({ ...paymentData, transaction_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      placeholder={paymentMethod === 'western_union' ? 'Enter MTCN number' : 'Enter transaction ID'}
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="sender_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Sender Name: *
-                    </label>
-                    <input
-                      type="text"
-                      id="sender_name"
-                      required
-                      value={paymentData.sender_name}
-                      onChange={(e) => setPaymentData({ ...paymentData, sender_name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      placeholder="Enter sender's full name"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="transaction_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Transaction Date: *
-                    </label>
-                    <input
-                      type="date"
-                      id="transaction_date"
-                      required
-                      value={paymentData.transaction_date}
-                      onChange={(e) => setPaymentData({ ...paymentData, transaction_date: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Amount (THB): *
-                    </label>
-                    <input
-                      type="number"
-                      id="amount"
-                      step="0.01"
-                      required
-                      value={paymentData.amount}
-                      onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      placeholder="Enter amount sent"
-                    />
-                  </div>
+                  {paymentMethod === 'promptpay' ? (
+                    <>
+                      <div>
+                        <label htmlFor="transaction_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Transaction ID *
+                        </label>
+                        <input
+                          type="text"
+                          id="transaction_id"
+                          required
+                          value={paymentData.transaction_id}
+                          onChange={(e) => setPaymentData({ ...paymentData, transaction_id: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          placeholder="Enter transaction ID"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="payer_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Payer Name *
+                        </label>
+                        <input
+                          type="text"
+                          id="payer_name"
+                          required
+                          value={paymentData.payer_name}
+                          onChange={(e) => setPaymentData({ ...paymentData, payer_name: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          placeholder="Enter payer's full name"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Amount (THB) *
+                        </label>
+                        <input
+                          type="number"
+                          id="amount"
+                          step="0.01"
+                          required
+                          value={paymentData.amount}
+                          onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          placeholder="Enter amount sent"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="transaction_datetime" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Transaction Date and Time *
+                        </label>
+                        <input
+                          type="datetime-local"
+                          id="transaction_datetime"
+                          required
+                          value={paymentData.transaction_datetime}
+                          onChange={(e) => setPaymentData({ ...paymentData, transaction_datetime: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="receipt" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Upload Receipt/Slip *
+                        </label>
+                        <input
+                          type="file"
+                          id="receipt"
+                          required
+                          accept="image/*,.pdf"
+                          onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100 dark:file:bg-pink-900/30 dark:file:text-pink-300"
+                        />
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          Accepted formats: JPG, PNG, PDF (Max 10MB)
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label htmlFor="transaction_id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          {paymentMethod === 'western_union' ? 'MTCN No' : 'Transaction ID'} *
+                        </label>
+                        <input
+                          type="text"
+                          id="transaction_id"
+                          required
+                          value={paymentData.transaction_id}
+                          onChange={(e) => setPaymentData({ ...paymentData, transaction_id: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          placeholder={paymentMethod === 'western_union' ? 'Enter MTCN number' : 'Enter transaction ID'}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="sender_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Sender Name: *
+                        </label>
+                        <input
+                          type="text"
+                          id="sender_name"
+                          required
+                          value={paymentData.sender_name}
+                          onChange={(e) => setPaymentData({ ...paymentData, sender_name: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          placeholder="Enter sender's full name"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="transaction_date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Transaction Date: *
+                        </label>
+                        <input
+                          type="date"
+                          id="transaction_date"
+                          required
+                          value={paymentData.transaction_date}
+                          onChange={(e) => setPaymentData({ ...paymentData, transaction_date: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="amount" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Amount (THB): *
+                        </label>
+                        <input
+                          type="number"
+                          id="amount"
+                          step="0.01"
+                          required
+                          value={paymentData.amount}
+                          onChange={(e) => setPaymentData({ ...paymentData, amount: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          placeholder="Enter amount sent"
+                        />
+                      </div>
+                    </>
+                  )}
 
                   {paymentMethod === 'western_union' && (
                     <>

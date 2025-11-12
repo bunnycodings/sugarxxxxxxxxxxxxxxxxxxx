@@ -17,6 +17,8 @@ interface CartContextType {
   removeFromCart: (id: number) => void
   updateQuantity: (id: number, quantity: number) => void
   clearCart: () => void
+  getSubtotal: () => number
+  getVAT: () => number
   getTotal: () => number
   getItemCount: () => number
 }
@@ -97,12 +99,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems([])
   }
 
-  const getTotal = () => {
+  const getSubtotal = () => {
     return items.reduce((total, item) => {
       const price = Number(item.price) || 0
       const quantity = Number(item.quantity) || 0
       return total + (price * quantity)
     }, 0)
+  }
+
+  const getVAT = () => {
+    const subtotal = getSubtotal()
+    return subtotal * 0.07 // 7% VAT
+  }
+
+  const getTotal = () => {
+    const subtotal = getSubtotal()
+    const vat = getVAT()
+    return subtotal + vat
   }
 
   const getItemCount = () => {
@@ -117,6 +130,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromCart,
         updateQuantity,
         clearCart,
+        getSubtotal,
+        getVAT,
         getTotal,
         getItemCount,
       }}

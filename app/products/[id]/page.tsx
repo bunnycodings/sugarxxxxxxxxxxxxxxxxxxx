@@ -114,13 +114,13 @@ export default function ProductDetail() {
         </Link>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden">
-          <div className="md:flex">
-            <div className="md:w-1/2">
+          <div className="md:flex md:flex-col">
+            <div className="w-full">
               {product.image_url ? (
                 <img
                   src={product.image_url}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-auto max-h-[600px] object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
                     target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="600"%3E%3Crect fill="%23ddd" width="800" height="600"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em" font-size="24"%3ENo Image Available%3C/text%3E%3C/svg%3E'
@@ -134,7 +134,7 @@ export default function ProductDetail() {
                 </div>
               )}
             </div>
-            <div className="md:w-1/2 p-8">
+            <div className="w-full p-8">
               <div className="mb-4">
                 <span className="px-3 py-1 rounded-full text-sm bg-pink-100 dark:bg-pink-900/30 text-pink-800 dark:text-pink-300">
                   {product.category || 'Uncategorized'}

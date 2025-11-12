@@ -7,14 +7,14 @@ import { useCart } from '@/contexts/CartContext'
 
 export default function Checkout() {
   const router = useRouter()
-  const { items, getTotal, clearCart } = useCart()
+  const { items, getSubtotal, getVAT, getTotal, clearCart } = useCart()
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     email: '',
     phone: '',
     countryCode: '+66' // Default to Thailand
   })
-  const [paymentMethod, setPaymentMethod] = useState<'wise' | 'western_union'>('wise')
+  const [paymentMethod, setPaymentMethod] = useState<'wise' | 'western_union' | 'promptpay'>('wise')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
@@ -59,41 +59,26 @@ export default function Checkout() {
     }
   }
 
-  // Calculate original total with validation
-  const calculateOriginalTotal = () => {
-    if (!items || items.length === 0) return 0
-    
-    return items.reduce((sum, item) => {
-      const price = Number(item.price) || 0
-      const quantity = Number(item.quantity) || 0
-      // Allow 0 prices for testing, but reject negative prices or invalid quantities
-      if (isNaN(price) || isNaN(quantity) || price < 0 || quantity <= 0) {
-        console.warn('Invalid cart item:', item)
-        return sum
-      }
-      return sum + (price * quantity)
-    }, 0)
-  }
+  // Calculate subtotal (before discount and VAT)
+  const subtotal = getSubtotal()
   
-  const originalTotal = calculateOriginalTotal()
-  
-  // Calculate discounted total
-  const calculateDiscountedTotal = () => {
-    if (!appliedDiscount) return originalTotal
-    
-    let discount = 0
+  // Calculate discount
+  let discountAmount = 0
+  let discountedSubtotal = subtotal
+  if (appliedDiscount) {
     if (appliedDiscount.discount_percent > 0) {
-      discount = (originalTotal * appliedDiscount.discount_percent) / 100
+      discountAmount = (subtotal * appliedDiscount.discount_percent) / 100
     } else if (appliedDiscount.discount_amount > 0) {
-      discount = appliedDiscount.discount_amount
+      discountAmount = appliedDiscount.discount_amount
     }
-    
-    const discountedTotal = Math.max(0, originalTotal - discount)
-    return discountedTotal
+    discountedSubtotal = Math.max(0, subtotal - discountAmount)
   }
   
-  const total = calculateDiscountedTotal()
-  const discountAmount = appliedDiscount ? originalTotal - total : 0
+  // Calculate VAT (7% on discounted subtotal)
+  const vat = discountedSubtotal * 0.07
+  
+  // Calculate final total (discounted subtotal + VAT)
+  const total = discountedSubtotal + vat
 
   if (isCheckingAuth) {
     return (
@@ -134,12 +119,11 @@ export default function Checkout() {
     }
 
     // Validate total (allow 0 for testing)
-    const calculatedTotal = calculateDiscountedTotal()
-    if (calculatedTotal === undefined || calculatedTotal === null || isNaN(calculatedTotal) || calculatedTotal < 0) {
+    if (total === undefined || total === null || isNaN(total) || total < 0) {
       console.error('Invalid total calculation:', { 
-        originalTotal, 
+        subtotal, 
+        vat,
         total, 
-        calculatedTotal, 
         items,
         appliedDiscount 
       })
@@ -296,7 +280,7 @@ export default function Checkout() {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Payment Method *
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <button
                       type="button"
                       onClick={() => setPaymentMethod('wise')}
@@ -320,6 +304,18 @@ export default function Checkout() {
                     >
                       <div className="font-semibold text-gray-900 dark:text-gray-100">Western Union</div>
                       <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">Money Transfer</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('promptpay')}
+                      className={`p-4 border-2 rounded-lg transition-all ${
+                        paymentMethod === 'promptpay'
+                          ? 'border-pink-500 bg-pink-50 dark:bg-pink-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-pink-300 dark:hover:border-pink-700'
+                      }`}
+                    >
+                      <div className="font-semibold text-gray-900 dark:text-gray-100">Promptpay</div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">QR Scan</div>
                     </button>
                   </div>
                 </div>
