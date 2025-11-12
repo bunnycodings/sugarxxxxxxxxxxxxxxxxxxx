@@ -3,7 +3,6 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { createPayment } from '@/lib/payments'
 import { getOrderById } from '@/lib/orders'
-import { sendDiscordWebhook } from '@/lib/discord'
 
 export async function POST(request: NextRequest) {
   try {
@@ -108,32 +107,6 @@ export async function POST(request: NextRequest) {
     }
 
     const payment = await createPayment(paymentData)
-
-    // Send Discord notification
-    try {
-      const order = await getOrderById(orderId)
-      if (order) {
-        await sendDiscordWebhook({
-          orderId: order.id!,
-          customerName: order.customer_name,
-          customerEmail: order.customer_email,
-          total: order.total,
-          paymentMethod: payment_method,
-          status: order.status, // Use order status which is updated by createPayment
-          items: order.items.map((item: any) => ({
-            name: item.product_name || item.name,
-            quantity: item.quantity,
-            price: item.price,
-            product_code: item.product_code
-          })),
-          transactionId: transaction_id || undefined,
-          senderName: sender_name || undefined
-        })
-      }
-    } catch (discordError) {
-      console.error('Failed to send Discord notification:', discordError)
-      // Don't fail the payment if Discord webhook fails
-    }
 
     return NextResponse.json({ 
       success: true,
