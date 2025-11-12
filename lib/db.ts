@@ -419,6 +419,19 @@ export async function initializeDatabase() {
       }
     }
 
+    // Reset order ID auto-increment to start from 1 if table is empty
+    // This ensures order IDs start from 1 when database is recreated or cleared
+    try {
+      const [orderCount] = await pool.execute('SELECT COUNT(*) as count FROM orders') as any[]
+      if (orderCount.length > 0 && orderCount[0].count === 0) {
+        await pool.execute('ALTER TABLE orders AUTO_INCREMENT = 1')
+        console.log('✓ Orders auto-increment reset to 1')
+      }
+    } catch (e: any) {
+      // Ignore errors if table doesn't exist or other issues
+      // This is normal if the table was just created
+    }
+
     // Create order_items table
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS order_items (

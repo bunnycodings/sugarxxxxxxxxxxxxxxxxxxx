@@ -320,7 +320,7 @@ export default function Checkout() {
                     </button>
                   </div>
                 </div>
-                {paymentMethod === 'promptpay' && (
+                {paymentMethod === 'promptpay' && !loading && (
                   <div className="bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-lg p-4">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 text-center">
                       Scan QR Code to Pay

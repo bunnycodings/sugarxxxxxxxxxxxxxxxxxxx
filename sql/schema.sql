@@ -169,6 +169,9 @@ CREATE TABLE IF NOT EXISTS orders (
   INDEX idx_payment_method (payment_method)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Reset order ID auto-increment to start from 1
+ALTER TABLE orders AUTO_INCREMENT = 1;
+
 -- ============================================
 -- Order Items Table
 -- ============================================
