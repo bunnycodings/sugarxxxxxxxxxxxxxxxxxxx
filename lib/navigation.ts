@@ -1,4 +1,4 @@
-import { createLocalizedPathnamesNavigation } from 'next-intl/navigation'
+import { createNavigation } from 'next-intl/navigation'
 import { locales } from '@/i18n'
 import { defineRouting } from 'next-intl/routing'
 
@@ -8,5 +8,5 @@ export const routing = defineRouting({
 })
 
 export const { Link, redirect, usePathname, useRouter } =
-  createLocalizedPathnamesNavigation(routing)
+  createNavigation(routing)
 
