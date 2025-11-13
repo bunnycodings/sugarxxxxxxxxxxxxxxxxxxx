@@ -2,6 +2,8 @@
 
 A modern, full-featured e-commerce webshop built with Next.js, React, and TypeScript. This platform provides a complete solution for selling virtual products and services with multi-language support, secure payment processing, and comprehensive admin management.
 
+🌐 **Live Site:** [https://store.sugarbunny.xyz/](https://store.sugarbunny.xyz/)
+
 ![Next.js](https://img.shields.io/badge/Next.js-14-black)
 ![React](https://img.shields.io/badge/React-18-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
@@ -221,20 +223,6 @@ Make sure to:
 ## 📝 License
 
 This project is private and proprietary.
-
-## 🤝 Custom Development Services
-
-**Interested in creating your own webshop or website?**
-
-We offer custom web development services! Whether you need:
-- A complete e-commerce platform
-- A custom website
-- Web application development
-- Or any other web development needs
-
-**Contact us at:** [stores.sugarbunny.xyz](https://stores.sugarbunny.xyz)
-
-We'd love to help bring your vision to life! 🚀
 
 ---
 
