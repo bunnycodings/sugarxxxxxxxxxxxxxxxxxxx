@@ -1,6 +1,6 @@
 # 🛍️ Sugarbunny Stores
 
-A modern, full-featured e-commerce webshop built with Next.js, React, and TypeScript. This platform provides a complete solution for selling virtual products and services with multi-language support, secure payment processing, and comprehensive admin management.
+A modern, full-featured e-commerce webshop built with Next.js, React, and TypeScript. This platform provides a complete solution for selling virtual products and services with secure payment processing and comprehensive admin management.
 
 🌐 **Live Site:** [https://store.sugarbunny.xyz/](https://store.sugarbunny.xyz/)
 
