@@ -6,7 +6,6 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
 import { useToast } from '@/contexts/ToastContext'
-import { useTranslations } from 'next-intl'
 
 interface Product {
   id: number
@@ -28,8 +27,6 @@ export default function ProductGrid({ products }: ProductGridProps) {
   const router = useRouter()
   const { addToCart } = useCart()
   const { showToast } = useToast()
-  const t = useTranslations('product')
-  const tCommon = useTranslations('common')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [checkingAuth, setCheckingAuth] = useState(true)
 
@@ -55,7 +52,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
     
     // Prevent adding to cart if stock is 0 or less
     if (product.stock <= 0) {
-      showToast(t('outOfStock'), 'error')
+      showToast('This product is out of stock and cannot be purchased.', 'error')
       return
     }
     
@@ -71,7 +68,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
       image_url: product.image_url,
       category: product.category
     })
-    showToast(t('addedToCart'), 'success')
+    showToast('Product added to cart!', 'success')
   }
 
   if (products.length === 0) {
@@ -171,14 +168,14 @@ export default function ProductGrid({ products }: ProductGridProps) {
                     disabled={checkingAuth}
                     className="px-4 py-2 bg-gradient-to-r from-pink-500 to-blue-500 text-white rounded-lg hover:from-pink-600 hover:to-blue-600 transition-all font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {!isAuthenticated ? t('loginToBuy') : tCommon('addToCart')}
+                    {!isAuthenticated ? 'Login to Buy' : 'Add to Cart'}
                   </button>
                 ) : (
                   <button 
                     disabled
                     className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 rounded-lg cursor-not-allowed font-medium text-sm"
                   >
-                    {tCommon('outOfStock')}
+                    Out of Stock
                   </button>
                 )}
                 <Link
@@ -186,7 +183,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
                   className="px-4 py-2 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-pink-300 dark:border-pink-700 rounded-lg hover:border-pink-500 dark:hover:border-pink-500 transition-all font-medium text-sm"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {tCommon('viewDetails')} →
+                  View Details →
                 </Link>
               </div>
             </div>

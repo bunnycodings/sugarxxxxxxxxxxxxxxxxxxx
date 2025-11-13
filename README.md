@@ -17,15 +17,6 @@ A modern, full-featured e-commerce webshop built with Next.js, React, and TypeSc
 - **Fully Responsive** - Optimized for desktop, tablet, and mobile devices
 - **Smooth Animations** - Modern UI components with smooth transitions
 
-### 🌍 Internationalization
-- **Multi-Language Support** - Available in 4 languages:
-  - 🇺🇸 English
-  - 🇹🇭 Thai (ไทย)
-  - 🇨🇳 Chinese (中文)
-  - 🇯🇵 Japanese (日本語)
-- **Language Switcher** - Easy language selection in the top navigation bar
-- **Localized Content** - All UI elements and content are translated
-
 ### 🛒 E-Commerce Features
 - **Product Catalog** - Browse and search products by category
 - **Shopping Cart** - Add, remove, and manage items
@@ -70,12 +61,10 @@ A modern, full-featured e-commerce webshop built with Next.js, React, and TypeSc
 ```
 sugarbunny-stores/
 ├── app/                      # Next.js app directory
-│   ├── [locale]/            # Internationalized routes
-│   │   ├── products/        # Product pages
-│   │   ├── cart/           # Shopping cart
-│   │   ├── checkout/       # Checkout process
-│   │   ├── dashboard/      # User dashboard
-│   │   └── ...             # Other pages
+│   ├── products/            # Product pages
+│   ├── cart/               # Shopping cart
+│   ├── checkout/           # Checkout process
+│   ├── dashboard/          # User dashboard
 │   ├── admin/              # Admin dashboard
 │   ├── api/                # API routes
 │   │   ├── auth/          # Authentication endpoints
@@ -86,7 +75,6 @@ sugarbunny-stores/
 ├── components/              # React components
 │   ├── Navbar.tsx         # Navigation bar
 │   ├── TopBar.tsx         # Top information bar
-│   ├── LanguageSwitcher.tsx # Language selector
 │   └── ...                # Other components
 ├── contexts/               # React contexts
 │   ├── CartContext.tsx    # Shopping cart state
@@ -96,11 +84,6 @@ sugarbunny-stores/
 │   ├── db.ts             # Database connection
 │   ├── auth.ts           # Authentication helpers
 │   └── ...               # Other utilities
-├── messages/              # Translation files
-│   ├── en.json           # English translations
-│   ├── th.json           # Thai translations
-│   ├── zh.json           # Chinese translations
-│   └── ja.json           # Japanese translations
 ├── public/                # Static assets
 ├── scripts/               # Setup and utility scripts
 └── sql/                   # Database schema
@@ -113,7 +96,6 @@ sugarbunny-stores/
 - **React 18** - UI library
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Utility-first CSS framework
-- **next-intl** - Internationalization
 
 ### Backend
 - **Next.js API Routes** - Server-side API endpoints
