@@ -1,12 +1,11 @@
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/contexts/ThemeContext'
-import { CartProvider } from '@/contexts/CartContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import Toast from '@/components/Toast'
 
 export const metadata: Metadata = {
-  title: 'Shopping Cart | Sugarbunny Stores',
-  description: 'Review your items and proceed to checkout',
+  title: 'Admin Dashboard | Sugarbunny Stores',
+  description: 'Admin dashboard for managing products, orders, and users',
   robots: {
     index: false,
     follow: false,
@@ -15,19 +14,17 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 
-export default function CartLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
   return (
     <ThemeProvider>
-      <CartProvider>
-        <ToastProvider>
-          {children}
-          <Toast />
-        </ToastProvider>
-      </CartProvider>
+      <ToastProvider>
+        {children}
+        <Toast />
+      </ToastProvider>
     </ThemeProvider>
   )
 }
