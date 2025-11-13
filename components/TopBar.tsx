@@ -1,6 +1,7 @@
 'use client'
 
 import CurrencyRate from './CurrencyRate'
+import LanguageSwitcher from './LanguageSwitcher'
 
 export default function TopBar() {
   return (
@@ -15,7 +16,8 @@ export default function TopBar() {
           </span>
           <CurrencyRate />
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center space-x-4">
+          <LanguageSwitcher />
           <a 
             href="https://discord.com" 
             target="_blank" 
