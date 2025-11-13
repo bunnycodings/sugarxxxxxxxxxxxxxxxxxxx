@@ -49,46 +49,50 @@ export default async function LocaleLayout({
   }
 
   return (
-    <>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            (function() {
-              try {
-                var theme = localStorage.getItem('theme');
-                if (theme === 'dark') {
-                  document.documentElement.classList.add('dark');
-                } else if (!theme) {
-                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (prefersDark) {
+    <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
+                  } else if (!theme) {
+                    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    if (prefersDark) {
+                      document.documentElement.classList.add('dark');
+                    }
                   }
-                }
-              } catch (e) {}
-            })();
-          `,
-        }}
-      />
-      <NextIntlClientProvider messages={messages || {}}>
-        <ThemeProvider>
-          <CartProvider>
-            <ToastProvider>
-              <div className="relative">
-                <BlackRibbon />
-                <TopBar />
-              </div>
-              <Navbar />
-              <main className="flex-grow">
-                {children}
-              </main>
-              <Footer />
-              <Toast />
-            </ToastProvider>
-          </CartProvider>
-        </ThemeProvider>
-      </NextIntlClientProvider>
-      <Analytics />
-    </>
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className={`${comicNeue.className} flex flex-col min-h-screen`}>
+        <NextIntlClientProvider messages={messages || {}}>
+          <ThemeProvider>
+            <CartProvider>
+              <ToastProvider>
+                <div className="relative">
+                  <BlackRibbon />
+                  <TopBar />
+                </div>
+                <Navbar />
+                <main className="flex-grow">
+                  {children}
+                </main>
+                <Footer />
+                <Toast />
+              </ToastProvider>
+            </CartProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
+        <Analytics />
+      </body>
+    </html>
   )
 }
 

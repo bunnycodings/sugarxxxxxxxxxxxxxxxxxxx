@@ -3,33 +3,17 @@
 import { useLocale } from 'next-intl'
 import { usePathname, useRouter } from 'next/navigation'
 import { locales, type Locale } from '@/i18n'
-import { useEffect, useState } from 'react'
 
 export default function LanguageSwitcher() {
-  const [mounted, setMounted] = useState(false)
+  // Hooks must be called unconditionally
+  const localeValue = useLocale()
   const router = useRouter()
   const pathname = usePathname()
   
-  // Safely get locale with fallback
-  let locale: Locale = 'en'
-  try {
-    locale = (useLocale() as Locale) || 'en'
-  } catch (error) {
-    console.error('Error getting locale:', error)
-    locale = 'en'
-  }
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-  
-  if (!mounted) {
-    return (
-      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600">
-        <span className="text-lg">🌐</span>
-      </div>
-    )
-  }
+  // Validate and default to 'en' if locale is invalid
+  const locale: Locale = locales.includes(localeValue as Locale) 
+    ? (localeValue as Locale) 
+    : 'en'
 
   const switchLocale = (newLocale: Locale) => {
     if (newLocale === locale) return

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import '../app/globals.css'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'),
@@ -42,6 +41,9 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  // In Next.js App Router, only one layout should render html/body
+  // Since [locale]/layout.tsx and other layouts already render html/body,
+  // we just return children here to avoid conflicts
   return children
 }
 
