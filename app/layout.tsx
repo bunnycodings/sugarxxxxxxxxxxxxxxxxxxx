@@ -42,8 +42,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   // In Next.js App Router, only one layout should render html/body
-  // Since [locale]/layout.tsx and other layouts already render html/body,
-  // we just return children here to avoid conflicts
+  // The [locale]/layout.tsx handles HTML for locale routes
+  // For non-locale routes, they need to provide their own HTML structure
+  // So we just return children here to avoid conflicts
   return children
 }
 
