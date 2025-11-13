@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useCart } from '@/contexts/CartContext'
 import { usePathname } from 'next/navigation'
-import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -209,8 +208,6 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
-            {/* Language Switcher */}
-            <LanguageSwitcher />
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
