@@ -6,6 +6,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
 
+export const dynamic = 'force-dynamic'
+
 export default function Cart() {
   const router = useRouter()
   const { items, removeFromCart, updateQuantity, getSubtotal, getVAT, getTotal, clearCart } = useCart()

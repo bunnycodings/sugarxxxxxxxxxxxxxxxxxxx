@@ -7,6 +7,8 @@ import Image from 'next/image'
 import { useCart } from '@/contexts/CartContext'
 import { useToast } from '@/contexts/ToastContext'
 
+export const dynamic = 'force-dynamic'
+
 interface Product {
   id: number
   name: string

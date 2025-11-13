@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
 
+export const dynamic = 'force-dynamic'
+
 interface User {
   id: number
   member_id?: string
